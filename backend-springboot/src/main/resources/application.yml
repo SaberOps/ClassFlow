@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: classflow-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${DB_NAME:classflow}
+    username: ${DB_USER:classflow}
+    password: ${DB_PASSWORD:classflow_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
