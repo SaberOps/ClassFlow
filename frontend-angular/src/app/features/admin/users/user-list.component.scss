@@ -1,0 +1,45 @@
+:host { display: block; }
+
+.page { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.page-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+h1 { margin: 0; font-size: 1.5rem; }
+.subtitle { margin: 0; color: #6b7280; }
+
+.banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: .95rem;
+}
+.banner-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.banner-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.link { background: none; border: 0; cursor: pointer; font-size: 1.2rem; line-height: 1; color: inherit; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.filters input, .filters select {
+  font: inherit; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;
+}
+.filters input { flex: 1 1 240px; min-width: 0; }
+
+.table-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #f3f4f6; white-space: nowrap; }
+th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: #6b7280; background: #f9fafb; }
+tbody tr:last-child td { border-bottom: 0; }
+.row-inactive td { color: #6b7280; }
+.col-actions { text-align: right; }
+.empty { text-align: center; color: #6b7280; padding: 28px; }
+
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-inactive { background: #f3f4f6; color: #4b5563; }
+
+.btn {
+  border: 1px solid #d1d5db; background: #fff; color: #1f2937; font: inherit; font-size: .85rem;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-left: 6px;
+}
+.btn:hover:not(:disabled) { background: #f3f4f6; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-danger-outline { color: #b91c1c; border-color: #fecaca; }
+.btn-danger-outline:hover:not(:disabled) { background: #fef2f2; }
+
+.pager { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 16px; }
+.pager .btn { margin-left: 0; }
