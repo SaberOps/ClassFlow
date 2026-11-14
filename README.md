@@ -1,55 +1,79 @@
 # ClassFlow
 
-ClassFlow is a shared class-management application for students, teachers and administrators.
-The repository uses one Angular frontend, one Spring Boot backend and one PostgreSQL database.
-Feature modules share the same account model, role definitions, database schema and security configuration.
+ClassFlow est une plateforme de gestion de classe destinée aux étudiants, enseignants et administrateurs. Le dépôt conserve un frontend Angular, un backend Spring Boot et un modèle de compte partagé pour toute l'application.
 
-## Technology stack
+## Technologies
 
-- Frontend: Angular 19
-- Backend: Spring Boot 4.1.1, Java 25
-- Persistence: Spring Data JPA
-- Database: PostgreSQL 16
-- Schema management: Flyway
+- Frontend : Angular 19
+- Backend : Spring Boot 4.1.1 et Java 25
+- Base de données : MySQL fourni par XAMPP
+- Accès aux données : Spring Data JPA
+- Migrations SQL : Flyway
 
-## Prerequisites
+## Pré-requis
 
 - JDK 25
-- Docker Desktop with Docker Compose
-- Node.js and npm
+- Node.js et npm
+- XAMPP avec le module MySQL démarré
 
-## Start the application
+## 1. Préparer MySQL avec XAMPP
 
-1. Copy `.env.example` to `.env` at the repository root.
-2. Start PostgreSQL: `docker compose up -d`.
-3. In a terminal, start the backend:
-   `cd backend-springboot` then `./mvnw spring-boot:run` (Windows: `.\mvnw.cmd spring-boot:run`).
-4. In another terminal, start Angular:
-   `cd frontend-angular`, `npm ci`, then `npm start`.
-5. Open `http://localhost:4200`.
+1. Ouvrir le panneau de contrôle XAMPP.
+2. Démarrer **MySQL**. Apache n'est pas nécessaire pour Angular ou Spring Boot ; il sert uniquement si tu souhaites ouvrir phpMyAdmin depuis XAMPP.
+3. Ouvrir `http://localhost/phpmyadmin`.
+4. Exécuter le contenu de `database/create_database.sql` dans l'onglet SQL. Cela crée la base `classflow`.
+5. La migration Flyway `V1__create_core_schema.sql` crée ensuite la table `users` au premier démarrage du backend.
 
-The backend listens on `http://localhost:8080`. Flyway applies the shared baseline schema from
-`src/main/resources/db/migration`. The baseline currently defines the shared `users` table,
-including account lifecycle fields used by the administration module. Other feature modules
-should extend this common schema through subsequent, globally versioned migrations.
+Configuration locale par défaut : utilisateur MySQL `root`, mot de passe vide, port `3306`. Si ton installation XAMPP utilise un autre mot de passe ou port, adapte `application.yml` et les variables d'environnement correspondantes.
 
-## Shared architecture rules
+## 2. Démarrer le backend
 
-- Reuse `user.User` and `user.Role`; do not create feature-specific copies.
-- Keep one authentication and authorization mechanism for the whole application.
-- Put database migrations in the single Flyway migration directory and use a global sequence
-  (`V2__...`, `V3__...`, etc.) as the application schema grows.
-- Never rename or edit a migration that has already been applied to a shared database.
-- Protect administrative operations with the shared security configuration and role authorities.
+Dans un terminal :
 
-## Validation
+```powershell
+cd backend-springboot
+.\mvnw.cmd spring-boot:run
+```
 
-Backend tests: `./mvnw test` (Windows: `.\mvnw.cmd test`).
-Backend package: `./mvnw clean package`.
-Frontend build: `npm run build`.
+Le backend écoute sur `http://localhost:8080`. Flyway applique automatiquement les migrations du dossier `src/main/resources/db/migration`.
 
-## Current repository scope
+## 3. Démarrer Angular
 
-This source snapshot contains the shared account foundation and administration account-management
-module. It does not contain the implementations of the other planned ClassFlow features; those
-modules must be merged into this common application as they are developed.
+Dans un deuxième terminal :
+
+```powershell
+cd frontend-angular
+npm ci
+npm start
+```
+
+Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8080`.
+
+## Architecture partagée
+
+- `user.User` et `user.Role` sont les modèles communs des comptes. Les modules fonctionnels doivent les réutiliser.
+- L'authentification et les règles d'autorisation doivent rester centralisées.
+- Le module d'administration des comptes (`/api/admin/users`) est conservé ; ses opérations restent protégées par le rôle `ADMIN`.
+- Les migrations SQL sont centralisées dans `backend-springboot/src/main/resources/db/migration` et suivent une numérotation globale (`V2__...`, `V3__...`).
+- Ne jamais modifier une migration Flyway déjà appliquée sur une base partagée. Ajouter une nouvelle migration pour toute évolution.
+
+## Vérifications
+
+Backend :
+
+```powershell
+cd backend-springboot
+.\mvnw.cmd test
+.\mvnw.cmd clean package
+```
+
+Frontend :
+
+```powershell
+cd frontend-angular
+npm run build
+```
+
+## Périmètre actuel
+
+Cette version contient le socle partagé des comptes et le module d'administration US11. Les fonctionnalités Filières/classes/affectation, cours, emplois du temps, présences, devoirs, documents, notifications et messagerie ne sont pas encore implémentées dans cette archive. Elles devront être ajoutées progressivement dans les modules communs du même projet.

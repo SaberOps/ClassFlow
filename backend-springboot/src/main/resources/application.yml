@@ -2,15 +2,21 @@ spring:
   application:
     name: classflow-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/${DB_NAME:classflow}
-    username: ${DB_USER:classflow}
-    password: ${DB_PASSWORD:classflow_dev}
+    url: jdbc:mysql://localhost:3306/${DB_NAME:classflow}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectionTimeZone=UTC
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   flyway:
     enabled: true
+    locations: classpath:db/migration
 
 management:
   endpoints:
