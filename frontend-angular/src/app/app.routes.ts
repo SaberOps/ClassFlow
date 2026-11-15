@@ -6,6 +6,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/admin/users/admin-users.routes').then((m) => m.ADMIN_USERS_ROUTES),
   },
-  { path: '', redirectTo: 'admin/users', pathMatch: 'full' },
-  { path: '**', redirectTo: 'admin/users' },
+  {
+    path: 'login',
+    loadComponent: () => import('./login/login').then((m) => m.Login),
+  },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '**', redirectTo: 'login' },
 ];

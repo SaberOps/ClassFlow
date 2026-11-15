@@ -1,0 +1,46 @@
+.brand-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.institution-logos {
+  display: flex;
+  align-items: center;
+  gap: clamp(7px, 1.2vw, 14px);
+}
+
+.fst-logo-link {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.fst-logo-link:hover,
+.fst-logo-link:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgb(0 0 0 / 20%);
+}
+
+.fst-logo-link:focus-visible {
+  outline: 2px solid #cbc6ff;
+  outline-offset: 3px;
+}
+
+.fst-logo,
+.utm-logo {
+  display: block;
+  width: clamp(52px, 5.3vw, 72px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.utm-logo {
+  width: clamp(76px, 8.5vw, 112px);
+}

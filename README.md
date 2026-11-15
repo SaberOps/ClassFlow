@@ -49,13 +49,7 @@ npm start
 
 Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8080`.
 
-## Architecture partagée
 
-- `user.User` et `user.Role` sont les modèles communs des comptes. Les modules fonctionnels doivent les réutiliser.
-- L'authentification et les règles d'autorisation doivent rester centralisées.
-- Le module d'administration des comptes (`/api/admin/users`) est conservé ; ses opérations restent protégées par le rôle `ADMIN`.
-- Les migrations SQL sont centralisées dans `backend-springboot/src/main/resources/db/migration` et suivent une numérotation globale (`V2__...`, `V3__...`).
-- Ne jamais modifier une migration Flyway déjà appliquée sur une base partagée. Ajouter une nouvelle migration pour toute évolution.
 
 ## Vérifications
 
