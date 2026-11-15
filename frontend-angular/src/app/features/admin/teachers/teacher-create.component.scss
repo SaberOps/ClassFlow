@@ -1,0 +1,196 @@
+.teacher-create-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #666;
+}
+
+.form-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+.form-section {
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #eee;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.form-section h2 {
+  margin: 0 0 20px;
+  font-size: 19px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid #d6d6d6;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-group input:focus {
+  border-color: #888;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.form-group input.ng-invalid.ng-touched {
+  border-color: #d9534f;
+}
+
+.field-hint {
+  margin-top: 6px;
+  color: #777;
+  font-size: 13px;
+}
+
+.field-error {
+  margin-top: 6px;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.form-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #222;
+  color: #fff;
+}
+
+.form-actions button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.form-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 10px;
+}
+
+.alert-error {
+  color: #8b1e1e;
+  background: #fdecec;
+  border: 1px solid #f3c5c5;
+}
+
+.alert-success {
+  color: #155724;
+  background: #eaf7ee;
+  border: 1px solid #b9e3c4;
+}
+
+.alert-success h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 19px;
+}
+
+.temporary-password {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 18px 0;
+  padding: 15px;
+  background: #fff;
+  border: 1px dashed #aaa;
+  border-radius: 8px;
+}
+
+.temporary-password span {
+  font-size: 13px;
+  color: #666;
+}
+
+.temporary-password strong {
+  font-family: monospace;
+  font-size: 20px;
+  letter-spacing: 0.05em;
+}
+
+.password-warning {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .teacher-create-page {
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

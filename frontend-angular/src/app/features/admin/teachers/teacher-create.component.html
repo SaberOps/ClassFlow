@@ -1,0 +1,150 @@
+<div class="teacher-create-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Administration</p>
+      <h1>Ajouter un enseignant</h1>
+      <p class="subtitle">
+        Créez le compte d'un nouvel enseignant.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-error">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (createdTeacher(); as teacher) {
+    <div class="alert alert-success">
+      <h2>Enseignant créé avec succès</h2>
+
+      <p>
+        Le compte de
+        <strong>{{ teacher.firstName }} {{ teacher.lastName }}</strong>
+        a été créé.
+      </p>
+
+      <div class="temporary-password">
+        <span>Mot de passe temporaire</span>
+        <strong>{{ teacher.temporaryPassword }}</strong>
+      </div>
+
+      <p class="password-warning">
+        Communiquez ce mot de passe temporaire à l'enseignant.
+        Il devra le modifier lors de sa première connexion.
+      </p>
+    </div>
+  }
+
+  <form [formGroup]="teacherForm" (ngSubmit)="createTeacher()">
+    <div class="form-card">
+      <div class="form-section">
+        <h2>Informations personnelles</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">Prénom</label>
+
+            <input
+              id="firstName"
+              type="text"
+              formControlName="firstName"
+              placeholder="Ex. Mohamed"
+            />
+
+            @if (
+              teacherForm.controls.firstName.touched &&
+              teacherForm.controls.firstName.invalid
+            ) {
+              <small class="field-error">
+                Le prénom est obligatoire.
+              </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Nom</label>
+
+            <input
+              id="lastName"
+              type="text"
+              formControlName="lastName"
+              placeholder="Ex. Ben Ali"
+            />
+
+            @if (
+              teacherForm.controls.lastName.touched &&
+              teacherForm.controls.lastName.invalid
+            ) {
+              <small class="field-error">
+                Le nom est obligatoire.
+              </small>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">E-mail institutionnel</label>
+
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="Ex. mohamed.benali@institution.tn"
+          />
+
+          @if (
+            teacherForm.controls.email.touched &&
+            teacherForm.controls.email.invalid
+          ) {
+            <small class="field-error">
+              Veuillez saisir une adresse e-mail valide.
+            </small>
+          }
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Matières enseignées</h2>
+
+        <div class="form-group">
+          <label for="subjects">Matières</label>
+
+          <input
+            id="subjects"
+            type="text"
+            formControlName="subjects"
+            placeholder="Ex. Java, SQL, Réseaux"
+          />
+
+          <small class="field-hint">
+            Séparez les matières par des virgules.
+          </small>
+
+          @if (
+            teacherForm.controls.subjects.touched &&
+            teacherForm.controls.subjects.invalid
+          ) {
+            <small class="field-error">
+              Au moins une matière est obligatoire.
+            </small>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            Création en cours...
+          } @else {
+            Ajouter l'enseignant
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
