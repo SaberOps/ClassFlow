@@ -35,7 +35,13 @@ cd backend-springboot
 .\mvnw.cmd spring-boot:run
 ```
 
-Le backend écoute sur `http://localhost:8080`. Flyway applique automatiquement les migrations du dossier `src/main/resources/db/migration`.
+Le backend écoute sur `http://localhost:8080`. Flyway applique automatiquement les migrations du dossier `backend-springboot/src/main/resources/db/migration`.
+
+## Réinitialisation du mot de passe (US05)
+
+Les pages `/forgot-password` et `/reset-password` permettent de demander un lien de réinitialisation puis de choisir un nouveau mot de passe. Le backend envoie un jeton aléatoire à usage unique, stocke uniquement son empreinte et le fait expirer après 15 minutes. La migration Flyway `V2__create_password_reset_tokens.sql` ajoute la table nécessaire sans modifier la migration initiale.
+
+Configure un serveur SMTP avant d'utiliser l'envoi d'e-mails, en définissant `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` et `SMTP_FROM`. `FRONTEND_URL` définit l'adresse utilisée dans le lien (par défaut `http://localhost:4200`). Ces variables sont listées dans `.env.example`, qui est un modèle et n'est pas chargé automatiquement par Spring Boot. Définis-les dans l'environnement du backend.
 
 ## 3. Démarrer Angular
 
@@ -47,9 +53,15 @@ npm ci
 npm start
 ```
 
-Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8080`.
+Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8080`. L'application ouvre la page de connexion ; le lien « Mot de passe oublié ? » mène au parcours US05.
 
+## Architecture partagée
 
+- `user.User` et `user.Role` sont les modèles communs des comptes. Les modules fonctionnels doivent les réutiliser.
+- L'authentification et les règles d'autorisation doivent rester centralisées.
+- Les endpoints `/api/admin/users` existants restent protégés par le rôle `ADMIN`.
+- Les migrations SQL sont centralisées dans `backend-springboot/src/main/resources/db/migration` et suivent une numérotation globale.
+- Ne jamais modifier une migration Flyway déjà appliquée sur une base partagée. Ajouter une nouvelle migration pour toute évolution.
 
 ## Vérifications
 
@@ -70,4 +82,4 @@ npm run build
 
 ## Périmètre actuel
 
-Cette version contient le socle partagé des comptes et le module d'administration US11. Les fonctionnalités Filières/classes/affectation, cours, emplois du temps, présences, devoirs, documents, notifications et messagerie ne sont pas encore implémentées dans cette archive. Elles devront être ajoutées progressivement dans les modules communs du même projet.
+Cette version contient la page de connexion ClassFlow et le parcours US05 de réinitialisation de mot de passe oublié. La connexion n'est pas encore reliée à un service d'authentification. Les fonctionnalités Filières/classes/affectation, cours, emplois du temps, présences, devoirs, documents, notifications et messagerie ne sont pas encore implémentées dans cette archive. Elles devront être ajoutées progressivement dans les modules communs du même projet.
