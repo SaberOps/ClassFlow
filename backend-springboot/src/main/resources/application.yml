@@ -6,6 +6,17 @@ spring:
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:fst.classflow@gmail.com}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   jpa:
     hibernate:
       ddl-auto: validate
@@ -31,3 +42,8 @@ management:
     web:
       exposure:
         include: health,info
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  mail:
+    from: ${SMTP_FROM:${SMTP_USERNAME:fst.classflow@gmail.com}}

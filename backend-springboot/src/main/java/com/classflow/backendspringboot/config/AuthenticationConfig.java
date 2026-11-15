@@ -63,10 +63,12 @@ public class AuthenticationConfig {
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(
                         (request, response, exception) -> response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/auth/forgot-password", "/api/auth/reset-password")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .formLogin(AbstractHttpConfigurer::disable)
