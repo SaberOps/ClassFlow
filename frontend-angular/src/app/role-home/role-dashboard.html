@@ -1,37 +1,86 @@
-<main>
+
+<main class="dashboard">
   @if (isLoading) {
-    <p role="status">Chargement de votre espace ClassFlow…</p>
+    <p role="status" class="loading">Chargement de votre espace ClassFlow...</p>
   } @else if (user) {
+
     @switch (requiredRole) {
+
       @case ('ADMIN') {
-        <section aria-labelledby="dashboard-title">
-          <p>Administration · {{ user.email }}</p>
-          <h1 id="dashboard-title">Espace administrateur</h1>
-          <p>Gérez les comptes et les accès de ClassFlow.</p>
-          <a routerLink="/admin/users">Gérer les utilisateurs</a>
+        <header class="dashboard-header">
+          <div class="brand">
+            <span class="brand-icon">CF</span>
+            <span>ClassFlow</span>
+          </div>
+          <button type="button" class="logout-btn"
+            (click)="logout()" [disabled]="isLoggingOut">
+            {{ isLoggingOut ? 'Déconnexion...' : 'Se déconnecter' }}
+          </button>
+        </header>
+
+        <section class="welcome">
+          <p class="eyebrow">ESPACE ADMINISTRATION</p>
+          <h1>Bienvenue, Administrateur !</h1>
+          <p>Gérez les utilisateurs et les enseignants de votre plateforme ClassFlow.</p>
+          <p class="user-email">{{ user.email }}</p>
         </section>
+
+        <section class="dashboard-content">
+          <h2>Gestion de la plateforme</h2>
+          <p class="section-description">Accédez rapidement aux fonctionnalités administratives.</p>
+
+          <div class="dashboard-grid">
+
+            <article class="dashboard-card">
+              <div class="card-icon">👨‍🏫</div>
+              <h3>Gestion des enseignants</h3>
+              <p>Ajoutez de nouveaux enseignants et créez leurs comptes sur ClassFlow.</p>
+              <a routerLink="/admin/teachers/new" class="action-link">
+                + Ajouter un enseignant
+              </a>
+            </article>
+
+            <article class="dashboard-card">
+              <div class="card-icon">👥</div>
+              <h3>Gestion des utilisateurs</h3>
+              <p>Consultez et gérez les comptes des utilisateurs de la plateforme.</p>
+              <a routerLink="/admin/users" class="action-link">
+                Gérer les utilisateurs →
+              </a>
+            </article>
+
+          </div>
+        </section>
+
+        <footer class="dashboard-footer">
+          ClassFlow · Administration
+        </footer>
       }
+
       @case ('TEACHER') {
         <section aria-labelledby="dashboard-title">
           <p>Espace enseignant · {{ user.email }}</p>
           <h1 id="dashboard-title">Espace enseignant</h1>
           <p>Votre espace pour préparer et suivre vos cours.</p>
+          <button type="button" (click)="logout()" [disabled]="isLoggingOut">
+            {{ isLoggingOut ? 'Déconnexion...' : 'Se déconnecter' }}
+          </button>
         </section>
       }
+
       @case ('STUDENT') {
         <section aria-labelledby="dashboard-title">
           <p>Espace étudiant · {{ user.email }}</p>
           <h1 id="dashboard-title">Espace étudiant</h1>
-          <p>Retrouvez vos cours et votre parcours d’apprentissage.</p>
+          <p>Retrouvez vos cours et votre parcours d'apprentissage.</p>
+          <button type="button" (click)="logout()" [disabled]="isLoggingOut">
+            {{ isLoggingOut ? 'Déconnexion...' : 'Se déconnecter' }}
+          </button>
         </section>
       }
     }
-    <p>
-      <button type="button" (click)="logout()" [disabled]="isLoggingOut">
-        {{ isLoggingOut ? 'Déconnexion…' : 'Se déconnecter' }}
-      </button>
-    </p>
   }
+
   @if (notice) {
     <p role="alert">{{ notice }}</p>
   }

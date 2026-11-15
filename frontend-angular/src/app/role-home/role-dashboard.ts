@@ -11,6 +11,7 @@ function isUserRole(value: unknown): value is UserRole {
   imports: [RouterLink],
   selector: 'app-role-dashboard',
   templateUrl: './role-dashboard.html',
+  styleUrl: './role-dashboard.scss',
 })
 export class RoleDashboard implements OnInit {
   private readonly auth = inject(AuthService);
