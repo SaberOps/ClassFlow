@@ -1,6 +1,47 @@
+
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () => import('./login/login').then((m) => m.Login),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/password-reset/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent
+      ),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/password-reset/reset-password.component').then(
+        (m) => m.ResetPasswordComponent
+      ),
+  },
+  {
+    path: 'home',
+    loadComponent: () => import('./role-home/role-home').then((m) => m.RoleHome),
+  },
+  {
+    path: 'admin/home',
+    loadComponent: () =>
+      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
+    data: { role: 'ADMIN' },
+  },
+  {
+    path: 'teacher/home',
+    loadComponent: () =>
+      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
+    data: { role: 'TEACHER' },
+  },
+  {
+    path: 'student/home',
+    loadComponent: () =>
+      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
+    data: { role: 'STUDENT' },
+  },
   {
     path: 'admin/users',
     loadChildren: () =>
@@ -15,6 +56,6 @@ export const routes: Routes = [
         (m) => m.TeacherCreateComponent
       ),
   },
-  { path: '', redirectTo: 'admin/users', pathMatch: 'full' },
-  { path: '**', redirectTo: 'admin/users' },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '**', redirectTo: 'login' },
 ];
