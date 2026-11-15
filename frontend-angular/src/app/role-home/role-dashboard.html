@@ -1,0 +1,38 @@
+<main>
+  @if (isLoading) {
+    <p role="status">Chargement de votre espace ClassFlow…</p>
+  } @else if (user) {
+    @switch (requiredRole) {
+      @case ('ADMIN') {
+        <section aria-labelledby="dashboard-title">
+          <p>Administration · {{ user.email }}</p>
+          <h1 id="dashboard-title">Espace administrateur</h1>
+          <p>Gérez les comptes et les accès de ClassFlow.</p>
+          <a routerLink="/admin/users">Gérer les utilisateurs</a>
+        </section>
+      }
+      @case ('TEACHER') {
+        <section aria-labelledby="dashboard-title">
+          <p>Espace enseignant · {{ user.email }}</p>
+          <h1 id="dashboard-title">Espace enseignant</h1>
+          <p>Votre espace pour préparer et suivre vos cours.</p>
+        </section>
+      }
+      @case ('STUDENT') {
+        <section aria-labelledby="dashboard-title">
+          <p>Espace étudiant · {{ user.email }}</p>
+          <h1 id="dashboard-title">Espace étudiant</h1>
+          <p>Retrouvez vos cours et votre parcours d’apprentissage.</p>
+        </section>
+      }
+    }
+    <p>
+      <button type="button" (click)="logout()" [disabled]="isLoggingOut">
+        {{ isLoggingOut ? 'Déconnexion…' : 'Se déconnecter' }}
+      </button>
+    </p>
+  }
+  @if (notice) {
+    <p role="alert">{{ notice }}</p>
+  }
+</main>
