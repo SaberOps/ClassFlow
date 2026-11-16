@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import {
   AssignmentDetail, AssignmentListItem, AttendanceOverview, CourseDetail, CourseSummary,
-  GradeItem, NotificationItem, Profile, RequestDocument, SessionItem, TeacherContact
+  GradeItem, NotificationItem, Profile, RequestDocument, SessionItem, TeacherContact, StudentMessage, StudentFeedItem, AbsenceJustification
 } from '../../shared/models/student.model';
 
 @Injectable({ providedIn: 'root' })
@@ -42,4 +42,11 @@ export class StudentApiService {
     return this.http.post<void>(`${this.base}/profile/password`, body);
   }
   teachers() { return this.http.get<TeacherContact[]>(`${this.base}/teachers`); }
+  feed() { return this.http.get<StudentFeedItem[]>(`${this.base}/feed`); }
+  messages(courseId: number) { return this.http.get<StudentMessage[]>(`${this.base}/messages`, { params: { courseId } }); }
+  sendMessage(body: { courseId: number; body: string }) { return this.http.post<StudentMessage>(`${this.base}/messages`, body); }
+  justifications() { return this.http.get<AbsenceJustification[]>(`${this.base}/attendance/justifications`); }
+  submitJustification(body: { attendanceRecordId: number; fileName: string; fileUrl: string; comment?: string }) {
+    return this.http.post<AbsenceJustification>(`${this.base}/attendance/justifications`, body);
+  }
 }

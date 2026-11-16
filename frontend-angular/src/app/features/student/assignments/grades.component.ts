@@ -6,7 +6,7 @@ import { GradeItem } from '../../../shared/models/student.model';
   selector: 'app-grades',
   standalone: true,
   template: `
-    <h1>Mes notes</h1>
+    <header><p class="eyebrow">RÉSULTATS</p><h1>Mes notes</h1><p>Vos résultats et les commentaires transmis par vos enseignants.</p></header>\n    @if (loading()) { <p role="status">Chargement des notes…</p> }\n    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }\n    @if (!loading() && grades().length===0) { <p class="empty">Aucune note publiée pour le moment.</p> }
     <table>
       <thead><tr><th>Matière</th><th>Devoir</th><th>Note</th><th>Commentaire</th></tr></thead>
       <tbody>

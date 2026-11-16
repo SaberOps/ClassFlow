@@ -55,7 +55,6 @@ public class AuthenticationConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            .cors(cors -> {})
             HttpSecurity http,
             AuthenticationManager authenticationManager,
             SecurityContextRepository securityContextRepository) throws Exception {

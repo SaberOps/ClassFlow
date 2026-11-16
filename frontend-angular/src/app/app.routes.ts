@@ -1,65 +1,44 @@
-
 import { Routes } from '@angular/router';
 import { studentGuard } from './student.guard';
 import { StudentLayoutComponent } from './layouts/student-layout/student-layout.component';
 
 export const routes: Routes = [
-  {
-    path: 'login',
-    loadComponent: () => import('./login/login').then((m) => m.Login),
-  },
+  { path: 'login', loadComponent: () => import('./login/login').then(m => m.Login) },
   {
     path: 'forgot-password',
-    loadComponent: () =>
-      import('./features/auth/password-reset/forgot-password.component').then(
-        (m) => m.ForgotPasswordComponent
-      ),
+    loadComponent: () => import('./features/auth/password-reset/forgot-password.component')
+      .then(m => m.ForgotPasswordComponent)
   },
   {
     path: 'reset-password',
-    loadComponent: () =>
-      import('./features/auth/password-reset/reset-password.component').then(
-        (m) => m.ResetPasswordComponent
-      ),
+    loadComponent: () => import('./features/auth/password-reset/reset-password.component')
+      .then(m => m.ResetPasswordComponent)
   },
-  {
-    path: 'home',
-    loadComponent: () => import('./role-home/role-home').then((m) => m.RoleHome),
-  },
+  { path: 'home', loadComponent: () => import('./role-home/role-home').then(m => m.RoleHome) },
   {
     path: 'admin/home',
-    loadComponent: () =>
-      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
-    data: { role: 'ADMIN' },
+    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
+    data: { role: 'ADMIN' }
   },
   {
     path: 'teacher/home',
-    loadComponent: () =>
-      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
-    data: { role: 'TEACHER' },
+    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
+    data: { role: 'TEACHER' }
   },
   {
     path: 'student/home',
-    loadComponent: () =>
-      import('./role-home/role-dashboard').then((m) => m.RoleDashboard),
-    data: { role: 'STUDENT' },
+    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
+    data: { role: 'STUDENT' }
   },
   {
     path: 'admin/users',
-    loadChildren: () =>
-      import('./features/admin/users/admin-users.routes').then(
-        (m) => m.ADMIN_USERS_ROUTES
-      ),
+    loadChildren: () => import('./features/admin/users/admin-users.routes').then(m => m.ADMIN_USERS_ROUTES)
   },
   {
     path: 'admin/teachers/new',
-    loadComponent: () =>
-      import('./features/admin/teachers/teacher-create.component').then(
-        (m) => m.TeacherCreateComponent
-      ),
+    loadComponent: () => import('./features/admin/teachers/teacher-create.component')
+      .then(m => m.TeacherCreateComponent)
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: '**', redirectTo: 'login' },
   {
     path: 'student',
     canActivate: [studentGuard],
@@ -77,9 +56,11 @@ export const routes: Routes = [
       { path: 'request-documents', loadComponent: () => import('./features/student/resources/request-documents.component').then(m => m.RequestDocumentsComponent) },
       { path: 'notifications', loadComponent: () => import('./features/student/notifications/notifications.component').then(m => m.NotificationsComponent) },
       { path: 'teachers', loadComponent: () => import('./features/student/messaging/teachers.component').then(m => m.TeachersComponent) },
+      { path: 'messages', loadComponent: () => import('./features/student/messaging/messages.component').then(m => m.MessagesComponent) },
+      { path: 'feed', loadComponent: () => import('./features/student/feed/feed.component').then(m => m.FeedComponent) },
       { path: 'profile', loadComponent: () => import('./features/student/profile/profile.component').then(m => m.ProfileComponent) }
     ]
   },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: '**', redirectTo: 'login' },
+  { path: '**', redirectTo: 'login' }
 ];
