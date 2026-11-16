@@ -9,7 +9,7 @@ import { AssignmentListItem } from '../../../shared/models/student.model';
   standalone: true,
   imports: [DatePipe, RouterLink],
   template: `
-    <h1>Devoirs</h1>
+    <header><p class="eyebrow">TRAVAIL PERSONNEL</p><h1>Mes devoirs</h1><p>Suivez vos échéances et l'état de vos dépôts.</p></header>\n    @if (loading()) { <p role="status">Chargement des devoirs…</p> }\n    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }\n    @if (!loading() && items().length===0) { <p class="empty">Aucun devoir à afficher.</p> }
     <table>
       <thead><tr><th>Titre</th><th>Cours</th><th>Échéance</th><th>Statut</th></tr></thead>
       <tbody>
