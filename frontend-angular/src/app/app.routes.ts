@@ -50,6 +50,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'admin/filieres',
+    loadComponent: () =>
+      import('./features/admin/academic/filiere-management.component').then(
+        (m) => m.FiliereManagementComponent
+      ),
+  },
+  {
     path: 'admin/teachers/new',
     loadComponent: () =>
       import('./features/admin/teachers/teacher-create.component').then(
