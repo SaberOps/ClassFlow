@@ -62,7 +62,7 @@ export class MessagesComponent implements OnInit {
     this.loading.set(true);
     this.api.messages(id).subscribe({
       next: list => this.messages.set(list),
-      error: () => this.error.set('Impossible de charger cette conversation.'),
+      error: () => { this.error.set('Impossible de charger cette conversation.'); this.loading.set(false); },
       complete: () => this.loading.set(false)
     });
   }
@@ -73,7 +73,7 @@ export class MessagesComponent implements OnInit {
     this.sending.set(true);
     this.api.sendMessage({ courseId, body }).subscribe({
       next: message => { this.messages.update(list => [...list, message]); this.draft = ''; this.error.set(''); },
-      error: () => this.error.set('Le message n’a pas pu être envoyé.'),
+      error: () => { this.error.set('Le message n’a pas pu être envoyé.'); this.sending.set(false); },
       complete: () => this.sending.set(false)
     });
   }
