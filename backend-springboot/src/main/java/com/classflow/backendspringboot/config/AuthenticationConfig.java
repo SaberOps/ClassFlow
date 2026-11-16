@@ -55,10 +55,12 @@ public class AuthenticationConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
+            .cors(cors -> {})
             HttpSecurity http,
             AuthenticationManager authenticationManager,
             SecurityContextRepository securityContextRepository) throws Exception {
         http
+                .cors(cors -> {})
                 .authenticationManager(authenticationManager)
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(authorize -> authorize

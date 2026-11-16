@@ -20,3 +20,5 @@ backend-springboot/target/
 # Local environment files
 .env
 !.env.example
+*.log
+
