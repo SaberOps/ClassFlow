@@ -59,6 +59,7 @@ public class AuthenticationConfig {
             AuthenticationManager authenticationManager,
             SecurityContextRepository securityContextRepository) throws Exception {
         http
+                .cors(cors -> {})
                 .authenticationManager(authenticationManager)
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(authorize -> authorize
