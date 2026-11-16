@@ -65,20 +65,20 @@ export class DashboardComponent implements OnInit {
   ngOnInit() {
     let completed = 0;
     const finish = () => { completed += 1; if (completed === 4) this.loading.set(false); };
-    this.api.profile().subscribe({ next: p => this.profile.set(p), error: () => this.error.set('Impossible de charger votre profil.'), complete: finish });
-    this.api.courses().subscribe({ next: c => this.courses.set(c), error: () => this.error.set('Impossible de charger vos cours.'), complete: finish });
+    this.api.profile().subscribe({ next: p => this.profile.set(p), error: () => { this.error.set('Impossible de charger votre profil.'); finish(); }, complete: finish });
+    this.api.courses().subscribe({ next: c => this.courses.set(c), error: () => { this.error.set('Impossible de charger vos cours.'); finish(); }, complete: finish });
     this.api.assignments().subscribe({
       next: list => {
         const pending = list.filter(a => a.status === 'TODO' || a.status === 'LATE');
         this.todo.set(pending.length);
         this.upcoming.set(pending.slice(0, 5));
       },
-      error: () => this.error.set('Impossible de charger vos échéances.'),
+      error: () => { this.error.set('Impossible de charger vos échéances.'); finish(); },
       complete: finish
     });
     this.api.notifications().subscribe({
       next: list => { this.notes.set(list.slice(0, 5)); this.unread.set(list.filter(n => !n.read).length); },
-      error: () => this.error.set('Impossible de charger vos notifications.'),
+      error: () => { this.error.set('Impossible de charger vos notifications.'); finish(); },
       complete: finish
     });
   }
