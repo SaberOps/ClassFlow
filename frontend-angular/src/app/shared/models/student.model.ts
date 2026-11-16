@@ -48,3 +48,17 @@ export interface Profile {
 export interface TeacherContact {
   id: number; firstName: string; lastName: string; email: string; courses: string[];
 }
+
+export interface StudentMessage {
+  id: number; courseId: number; senderId: number; senderName: string;
+  body: string; sentAt: string; readAt?: string | null;
+}
+export interface StudentFeedItem {
+  type: 'ANNOUNCEMENT' | 'SESSION' | 'ASSIGNMENT'; id: number;
+  title: string; description?: string; courseTitle?: string; date: string; link: string;
+}
+export interface AbsenceJustification {
+  id: number; attendanceRecordId: number; fileName: string; fileUrl: string;
+  comment?: string; status: string; submittedAt: string; attendanceStatus: string;
+  absenceAt?: string; courseTitle?: string;
+}
