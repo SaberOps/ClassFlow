@@ -1,6 +1,7 @@
 package com.classflow.backendspringboot.teacher.messaging;
 
 import com.classflow.backendspringboot.common.exception.NotFoundException;
+import com.classflow.backendspringboot.common.exception.ConflictException;
 import com.classflow.backendspringboot.user.User;
 import com.classflow.backendspringboot.user.UserRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,7 +43,7 @@ public class TeacherMessageService {
     public MessageDto reply(String email,long courseId,long studentId,String body) {
         User teacher=teacher(email);
         requireConversation(teacher,courseId,studentId);
-        if(body==null || body.isBlank() || body.length()>4000) throw new IllegalArgumentException("Message must contain 1 to 4000 characters");
+        if(body==null || body.isBlank() || body.length()>4000) throw new ConflictException("Message must contain 1 to 4000 characters");
         jdbc.update("""
             INSERT INTO student_teacher_messages(course_id,student_id,teacher_id,sender_id,body)
             VALUES (?,?,?,?,?)
