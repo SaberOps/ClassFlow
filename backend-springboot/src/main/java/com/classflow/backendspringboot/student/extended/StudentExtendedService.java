@@ -115,7 +115,7 @@ public class StudentExtendedService {
               (SELECT 1 FROM enrollments e WHERE e.course_id=a.course_id AND e.student_id=?)
             """,(rs)->{ items.add(new FeedItemDto("ANNOUNCEMENT",rs.getLong("id"),rs.getString("title"),
                 rs.getString("body"),rs.getString("course_title"),rs.getTimestamp("published_at").toInstant(),
-                "/student/notifications")); },student.getId());
+                rs.getObject("course_id")==null?"/student/dashboard":"/student/courses/"+rs.getLong("course_id"))); },student.getId());
         jdbc.query("""
             SELECT t.id,COALESCE(t.title,c.title) AS title,t.room,t.starts_at,c.title AS course_title
             FROM timetable_sessions t JOIN courses c ON c.id=t.course_id
@@ -131,7 +131,7 @@ public class StudentExtendedService {
             WHERE e.student_id=? AND a.due_at>=CURRENT_TIMESTAMP(6)
             """,(rs)->{ items.add(new FeedItemDto("ASSIGNMENT",rs.getLong("id"),rs.getString("title"),
                 rs.getString("instructions"),rs.getString("course_title"),rs.getTimestamp("due_at").toInstant(),
-                "/student/assignments")); },student.getId());
+                "/student/assignments/"+rs.getLong("id"))); },student.getId());
         return items.stream().sorted(Comparator.comparing(FeedItemDto::date).reversed()).limit(50).toList();
     }
 
