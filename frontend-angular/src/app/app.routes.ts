@@ -56,6 +56,8 @@ export const routes: Routes = [
       { path: 'request-documents', loadComponent: () => import('./features/student/resources/request-documents.component').then(m => m.RequestDocumentsComponent) },
       { path: 'notifications', loadComponent: () => import('./features/student/notifications/notifications.component').then(m => m.NotificationsComponent) },
       { path: 'teachers', loadComponent: () => import('./features/student/messaging/teachers.component').then(m => m.TeachersComponent) },
+      { path: 'messages', loadComponent: () => import('./features/student/messaging/messages.component').then(m => m.MessagesComponent) },
+      { path: 'feed', loadComponent: () => import('./features/student/feed/feed.component').then(m => m.FeedComponent) },
       { path: 'profile', loadComponent: () => import('./features/student/profile/profile.component').then(m => m.ProfileComponent) }
     ]
   },
