@@ -24,7 +24,8 @@ public class StudentExtendedService {
         this.enrollments = enrollments;
     }
 
-    @Transactional\n    public List<MessageDto> messages(User student, long courseId) {
+    @Transactional
+    public List<MessageDto> messages(User student, long courseId) {
         requireEnrollment(student, courseId);
         jdbc.update("""
             UPDATE student_teacher_messages SET read_at=CURRENT_TIMESTAMP(6)
@@ -98,7 +99,7 @@ public class StudentExtendedService {
             """,request.attendanceRecordId(),student.getId(),request.fileName(),request.fileUrl(),request.comment());
         return jdbc.queryForObject("""
             SELECT id,attendance_record_id,file_name,file_url,comment,status,submitted_at
-            FROM attendance_justifications WHERE id=LAST_INSERT_ID()
+            FROM attendance_justifications WHERE attendance_record_id=? AND student_id=? ORDER BY id DESC LIMIT 1
             """,(rs,row)->new JustificationDto(rs.getLong("id"),rs.getLong("attendance_record_id"),
                 rs.getString("file_name"),rs.getString("file_url"),rs.getString("comment"),
                 rs.getString("status"),rs.getTimestamp("submitted_at").toInstant(),
