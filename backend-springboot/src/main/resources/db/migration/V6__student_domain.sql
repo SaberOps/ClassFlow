@@ -1,4 +1,4 @@
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS departments (
                              id BIGINT NOT NULL AUTO_INCREMENT,
                              code VARCHAR(30) NOT NULL,
                              name VARCHAR(150) NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE departments (
                              CONSTRAINT uq_departments_code UNIQUE (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE class_groups (
+CREATE TABLE IF NOT EXISTS class_groups (
                               id BIGINT NOT NULL AUTO_INCREMENT,
                               department_id BIGINT NOT NULL,
                               name VARCHAR(80) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE class_groups (
                               CONSTRAINT uq_class_groups_name_year UNIQUE (name, academic_year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE student_profiles (
+CREATE TABLE IF NOT EXISTS student_profiles (
                                   user_id BIGINT NOT NULL,
                                   department_id BIGINT NULL,
                                   class_group_id BIGINT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE student_profiles (
                                   CONSTRAINT uq_student_profiles_number UNIQUE (student_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE courses (
+CREATE TABLE IF NOT EXISTS courses (
                          id BIGINT NOT NULL AUTO_INCREMENT,
                          code VARCHAR(30) NOT NULL,
                          title VARCHAR(200) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE courses (
                          CONSTRAINT fk_courses_class FOREIGN KEY (class_group_id) REFERENCES class_groups(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE enrollments (
+CREATE TABLE IF NOT EXISTS enrollments (
                              id BIGINT NOT NULL AUTO_INCREMENT,
                              course_id BIGINT NOT NULL,
                              student_id BIGINT NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE enrollments (
                              INDEX idx_enrollment_student (student_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE assignments (
+CREATE TABLE IF NOT EXISTS assignments (
                              id BIGINT NOT NULL AUTO_INCREMENT,
                              course_id BIGINT NOT NULL,
                              title VARCHAR(200) NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE assignments (
                              CONSTRAINT fk_assignments_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE assignment_attachments (
+CREATE TABLE IF NOT EXISTS assignment_attachments (
                                         id BIGINT NOT NULL AUTO_INCREMENT,
                                         assignment_id BIGINT NOT NULL,
                                         file_name VARCHAR(255) NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE assignment_attachments (
                                         CONSTRAINT fk_assignment_att FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE submissions (
+CREATE TABLE IF NOT EXISTS submissions (
                              id BIGINT NOT NULL AUTO_INCREMENT,
                              assignment_id BIGINT NOT NULL,
                              student_id BIGINT NOT NULL,
@@ -99,12 +99,12 @@ CREATE TABLE submissions (
                              CONSTRAINT fk_submission_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE timetable_sessions (
+CREATE TABLE IF NOT EXISTS timetable_sessions (
                                     id BIGINT NOT NULL AUTO_INCREMENT,
                                     course_id BIGINT NOT NULL,
                                     title VARCHAR(200) NULL,
                                     starts_at TIMESTAMP(6) NOT NULL,
-                                    ends_at TIMESTAMP(6) NOT NULL,
+                                    ends_at DATETIME(6) NOT NULL,
                                     room VARCHAR(80) NULL,
                                     meeting_url VARCHAR(500) NULL,
                                     cancelled BOOLEAN NOT NULL DEFAULT FALSE,
@@ -115,7 +115,7 @@ CREATE TABLE timetable_sessions (
                                     INDEX idx_timetable_starts (starts_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE resources (
+CREATE TABLE IF NOT EXISTS resources (
                            id BIGINT NOT NULL AUTO_INCREMENT,
                            course_id BIGINT NOT NULL,
                            title VARCHAR(200) NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE resources (
                            CONSTRAINT fk_resources_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE attendance_records (
+CREATE TABLE IF NOT EXISTS attendance_records (
                                     id BIGINT NOT NULL AUTO_INCREMENT,
                                     session_id BIGINT NOT NULL,
                                     student_id BIGINT NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE attendance_records (
                                     CONSTRAINT fk_attendance_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE announcements (
+CREATE TABLE IF NOT EXISTS announcements (
                                id BIGINT NOT NULL AUTO_INCREMENT,
                                course_id BIGINT NULL,
                                author_id BIGINT NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE announcements (
                                CONSTRAINT fk_announcements_author FOREIGN KEY (author_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
                                id BIGINT NOT NULL AUTO_INCREMENT,
                                user_id BIGINT NOT NULL,
                                type VARCHAR(40) NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE notifications (
                                INDEX idx_notifications_user_read (user_id, read_flag, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE request_documents (
+CREATE TABLE IF NOT EXISTS request_documents (
                                    id BIGINT NOT NULL AUTO_INCREMENT,
                                    title VARCHAR(200) NOT NULL,
                                    description TEXT NULL,

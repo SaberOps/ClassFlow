@@ -13,8 +13,7 @@ import { CourseSummary } from '../../../shared/models/student.model';
     @if (loading()) { <p role="status">Chargement des cours…</p> }
     @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
     <input [(ngModel)]="q" (ngModelChange)="load()" placeholder="Rechercher un cours…" />
-    @if (!loading() && courses().length===0) { <p class="empty">Aucun cours ne correspond à votre recherche.</p> }
-    <input [(ngModel)]="q" (ngModelChange)="load()" placeholder="Rechercher" />
+    @if (!loading() && !error() && courses().length===0) { <p class="empty">Aucun cours ne correspond à votre recherche.</p> }
     <ul>
       @for (c of courses(); track c.id) {
         <li><a [routerLink]="['/student/courses', c.id]">{{ c.code }} — {{ c.title }}</a> · {{ c.teacherName }}</li>
@@ -25,7 +24,22 @@ import { CourseSummary } from '../../../shared/models/student.model';
 export class CoursesComponent implements OnInit {
   private readonly api = inject(StudentApiService);
   readonly courses = signal<CourseSummary[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
   q = '';
   ngOnInit() { this.load(); }
-  load() { this.api.courses(this.q).subscribe(list => this.courses.set(list)); }
+  load() {
+    this.loading.set(true);
+    this.error.set('');
+    this.api.courses(this.q).subscribe({
+      next: list => {
+        this.courses.set(list);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Impossible de charger les cours.');
+        this.loading.set(false);
+      },
+    });
+  }
 }

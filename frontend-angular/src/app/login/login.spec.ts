@@ -38,7 +38,7 @@ describe('Login', () => {
     const paths = [
       { role: 'ADMIN' as const, path: '/admin/home' },
       { role: 'TEACHER' as const, path: '/teacher/home' },
-      { role: 'STUDENT' as const, path: '/student/home' },
+      { role: 'STUDENT' as const, path: '/student/dashboard' },
     ];
 
     for (const { role, path } of paths) {

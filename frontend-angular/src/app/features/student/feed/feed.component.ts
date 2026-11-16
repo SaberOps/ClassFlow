@@ -1,8 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { StudentApiService } from '../../core/services/student-api.service';
-import { StudentFeedItem } from '../../shared/models/student.model';
+import { StudentApiService } from '../../../core/services/student-api.service';
+import { StudentFeedItem } from '../../../shared/models/student.model';
 
 @Component({
   selector: 'app-student-feed',

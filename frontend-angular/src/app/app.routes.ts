@@ -27,8 +27,8 @@ export const routes: Routes = [
   },
   {
     path: 'student/home',
-    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
-    data: { role: 'STUDENT' }
+    pathMatch: 'full',
+    redirectTo: 'student/dashboard'
   },
   {
     path: 'admin/users',

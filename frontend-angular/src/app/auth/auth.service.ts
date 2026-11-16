@@ -10,7 +10,7 @@ export interface AuthResponse {
 }
 
 export function homePathForRole(role: UserRole): string {
-  return `/${role.toLowerCase()}/home`;
+  return role === 'STUDENT' ? '/student/dashboard' : `/${role.toLowerCase()}/home`;
 }
 
 @Injectable({ providedIn: 'root' })

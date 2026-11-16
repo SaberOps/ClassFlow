@@ -6,7 +6,7 @@ import { GradeItem } from '../../../shared/models/student.model';
   selector: 'app-grades',
   standalone: true,
   template: `
-    <header><p class="eyebrow">RÉSULTATS</p><h1>Mes notes</h1><p>Vos résultats et les commentaires transmis par vos enseignants.</p></header>\n    @if (loading()) { <p role="status">Chargement des notes…</p> }\n    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }\n    @if (!loading() && grades().length===0) { <p class="empty">Aucune note publiée pour le moment.</p> }
+    <header><p class="eyebrow">RÉSULTATS</p><h1>Mes notes</h1><p>Vos résultats et les commentaires transmis par vos enseignants.</p></header>\n    @if (loading()) { <p role="status">Chargement des notes…</p> }\n    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }\n        @if (!loading() && !error() && grades().length===0) { <p class="empty">Aucune note publiée pour le moment.</p> }
     <table>
       <thead><tr><th>Matière</th><th>Devoir</th><th>Note</th><th>Commentaire</th></tr></thead>
       <tbody>
@@ -20,5 +20,19 @@ import { GradeItem } from '../../../shared/models/student.model';
 export class GradesComponent implements OnInit {
   private readonly api = inject(StudentApiService);
   readonly grades = signal<GradeItem[]>([]);
-  ngOnInit() { this.api.grades().subscribe(list => this.grades.set(list)); }
+  readonly loading = signal(true);
+  readonly error = signal('');
+
+  ngOnInit() {
+    this.api.grades().subscribe({
+      next: list => {
+        this.grades.set(list);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Impossible de charger les notes.');
+        this.loading.set(false);
+      },
+    });
+  }
 }

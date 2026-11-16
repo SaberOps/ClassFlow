@@ -25,5 +25,19 @@ export class CourseDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StudentApiService);
   readonly course = signal<CourseDetail | null>(null);
-  ngOnInit() { this.api.course(Number(this.route.snapshot.paramMap.get('id'))).subscribe(c => this.course.set(c)); }
+  readonly loading = signal(true);
+  readonly error = signal('');
+
+  ngOnInit() {
+    this.api.course(Number(this.route.snapshot.paramMap.get('id'))).subscribe({
+      next: course => {
+        this.course.set(course);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Impossible de charger ce cours.');
+        this.loading.set(false);
+      },
+    });
+  }
 }
