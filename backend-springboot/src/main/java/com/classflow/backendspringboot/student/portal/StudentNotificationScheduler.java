@@ -31,11 +31,19 @@ public class StudentNotificationScheduler {
 
         jdbc.update("""
             INSERT INTO notifications(user_id,type,title,body,link,reference_key,read_flag)
+            SELECT u.id,'ANNOUNCEMENT','Nouvelle annonce',a.title,
+                   '/student/feed',CONCAT('announcement:',a.id,':',u.id),FALSE
+            FROM announcements a
+            JOIN users u ON u.role='STUDENT' AND u.enabled=TRUE AND u.deleted_at IS NULL
+            WHERE a.course_id IS NULL
+              AND a.published_at>=DATE_SUB(CURRENT_TIMESTAMP(6),INTERVAL 10 MINUTE)
+            UNION ALL
             SELECT e.student_id,'ANNOUNCEMENT','Nouvelle annonce',a.title,
                    '/student/feed',CONCAT('announcement:',a.id,':',e.student_id),FALSE
             FROM announcements a
             JOIN enrollments e ON e.course_id=a.course_id
-            WHERE a.published_at>=DATE_SUB(CURRENT_TIMESTAMP(6),INTERVAL 10 MINUTE)
+            WHERE a.course_id IS NOT NULL
+              AND a.published_at>=DATE_SUB(CURRENT_TIMESTAMP(6),INTERVAL 10 MINUTE)
             ON DUPLICATE KEY UPDATE reference_key=VALUES(reference_key)
             """);
 
