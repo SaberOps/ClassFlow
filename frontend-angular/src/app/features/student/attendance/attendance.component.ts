@@ -64,7 +64,7 @@ export class AttendanceComponent implements OnInit {
   comment = '';
 
   ngOnInit() {
-    this.api.attendance().subscribe({ next: d => this.data.set(d), error: () => this.error.set('Impossible de charger les présences.'), complete: () => this.loading.set(false) });
+    this.api.attendance().subscribe({ next: d => this.data.set(d), error: () => { this.error.set('Impossible de charger les présences.'); this.loading.set(false); }, complete: () => this.loading.set(false) });
     this.reloadJustifications();
   }
   reloadJustifications() {
@@ -79,7 +79,7 @@ export class AttendanceComponent implements OnInit {
     this.sending.set(true);
     this.api.submitJustification({ attendanceRecordId, fileName: this.fileName.trim(), fileUrl: this.fileUrl.trim(), comment: this.comment.trim() }).subscribe({
       next: item => { this.justifications.update(list => [item, ...list]); this.selectedAbsenceId.set(null); this.error.set(''); },
-      error: () => this.error.set('Le justificatif n’a pas pu être envoyé. Vérifiez le lien du document.'),
+      error: () => { this.error.set('Le justificatif n’a pas pu être envoyé. Vérifiez le lien du document.'); this.sending.set(false); },
       complete: () => this.sending.set(false)
     });
   }
