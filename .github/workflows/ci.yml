@@ -25,7 +25,7 @@ jobs:
           java-version: '25'
           cache: maven
       - name: Run backend tests
-        run: ./mvnw -B test
+        run: bash mvnw -B test
 
   frontend:
     name: Angular production build
