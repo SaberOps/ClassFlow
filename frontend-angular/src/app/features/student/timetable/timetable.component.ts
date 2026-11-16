@@ -8,7 +8,7 @@ import { SessionItem } from '../../../shared/models/student.model';
   standalone: true,
   imports: [DatePipe],
   template: `
-    <h1>Emploi du temps</h1>
+    <header><p class="eyebrow">ORGANISATION</p><h1>Emploi du temps</h1><p>Consultez vos séances par semaine.</p></header>\n    @if (loading()) { <p role="status">Chargement de la semaine…</p> }\n    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }\n    @if (!loading() && sessions().length===0) { <p class="empty">Aucune séance prévue pour cette semaine.</p> }
     <button type="button" (click)="shift(-7)">Semaine précédente</button>
     <button type="button" (click)="shift(7)">Semaine suivante</button>
     <ul>
