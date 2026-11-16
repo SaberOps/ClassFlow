@@ -22,6 +22,8 @@ import { StudentApiService } from '../../core/services/student-api.service';
           <a routerLink="/student/request-documents" routerLinkActive="on"><span>▧</span>Documents</a>
           <a routerLink="/student/notifications" routerLinkActive="on"><span>♢</span>Notifications <b>{{ unread() }}</b></a>
           <a routerLink="/student/teachers" routerLinkActive="on"><span>♧</span>Enseignants</a>
+          <a routerLink="/student/messages" routerLinkActive="on"><span>✉</span>Mini-chat</a>
+          <a routerLink="/student/feed" routerLinkActive="on"><span>◷</span>Fil d’actualités</a>
         </nav>
         <div class="bottom"><a routerLink="/student/profile" routerLinkActive="on">⚙ Mon profil</a><button type="button" (click)="logout()">↪ Déconnexion</button></div>
       </aside>
