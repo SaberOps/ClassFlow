@@ -113,25 +113,25 @@ public class StudentExtendedService {
             FROM announcements a LEFT JOIN courses c ON c.id=a.course_id
             WHERE a.course_id IS NULL OR EXISTS
               (SELECT 1 FROM enrollments e WHERE e.course_id=a.course_id AND e.student_id=?)
-            """,(rs)->items.add(new FeedItemDto("ANNOUNCEMENT",rs.getLong("id"),rs.getString("title"),
+            """,(rs)->{ items.add(new FeedItemDto("ANNOUNCEMENT",rs.getLong("id"),rs.getString("title"),
                 rs.getString("body"),rs.getString("course_title"),rs.getTimestamp("published_at").toInstant(),
-                "/student/notifications")),student.getId());
+                "/student/notifications")); },student.getId());
         jdbc.query("""
             SELECT t.id,COALESCE(t.title,c.title) AS title,t.room,t.starts_at,c.title AS course_title
             FROM timetable_sessions t JOIN courses c ON c.id=t.course_id
             JOIN enrollments e ON e.course_id=c.id
             WHERE e.student_id=? AND t.cancelled=FALSE AND t.starts_at>=CURRENT_TIMESTAMP(6)
-            """,(rs)->items.add(new FeedItemDto("SESSION",rs.getLong("id"),rs.getString("title"),
+            """,(rs)->{ items.add(new FeedItemDto("SESSION",rs.getLong("id"),rs.getString("title"),
                 rs.getString("room"),rs.getString("course_title"),rs.getTimestamp("starts_at").toInstant(),
-                "/student/timetable")),student.getId());
+                "/student/timetable")); },student.getId());
         jdbc.query("""
             SELECT a.id,a.title,a.instructions,a.due_at,c.title AS course_title
             FROM assignments a JOIN courses c ON c.id=a.course_id
             JOIN enrollments e ON e.course_id=c.id
             WHERE e.student_id=? AND a.due_at>=CURRENT_TIMESTAMP(6)
-            """,(rs)->items.add(new FeedItemDto("ASSIGNMENT",rs.getLong("id"),rs.getString("title"),
+            """,(rs)->{ items.add(new FeedItemDto("ASSIGNMENT",rs.getLong("id"),rs.getString("title"),
                 rs.getString("instructions"),rs.getString("course_title"),rs.getTimestamp("due_at").toInstant(),
-                "/student/assignments")),student.getId());
+                "/student/assignments")); },student.getId());
         return items.stream().sorted(Comparator.comparing(FeedItemDto::date).reversed()).limit(50).toList();
     }
 
