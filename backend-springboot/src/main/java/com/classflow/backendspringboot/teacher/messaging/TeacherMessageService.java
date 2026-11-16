@@ -22,6 +22,7 @@ public class TeacherMessageService {
         this.users=users;
     }
 
+    @Transactional
     public List<MessageDto> conversation(String email,long courseId,long studentId) {
         User teacher=teacher(email);
         requireConversation(teacher,courseId,studentId);
