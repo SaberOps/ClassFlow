@@ -24,7 +24,7 @@ public class StudentExtendedService {
         this.enrollments = enrollments;
     }
 
-    public List<MessageDto> messages(User student, long courseId) {
+    @Transactional\n    public List<MessageDto> messages(User student, long courseId) {
         requireEnrollment(student, courseId);
         jdbc.update("""
             UPDATE student_teacher_messages SET read_at=CURRENT_TIMESTAMP(6)
@@ -102,7 +102,7 @@ public class StudentExtendedService {
             """,(rs,row)->new JustificationDto(rs.getLong("id"),rs.getLong("attendance_record_id"),
                 rs.getString("file_name"),rs.getString("file_url"),rs.getString("comment"),
                 rs.getString("status"),rs.getTimestamp("submitted_at").toInstant(),
-                "ABSENT",null,""),request.attendanceRecordId());
+                "ABSENT",null,""),request.attendanceRecordId(),student.getId());
     }
 
     public List<FeedItemDto> feed(User student) {
