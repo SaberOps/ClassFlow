@@ -3,10 +3,12 @@ package com.classflow.backendspringboot.teacher.course;
 import com.classflow.backendspringboot.common.ResourceType;
 import com.classflow.backendspringboot.common.FileStorageService;
 import com.classflow.backendspringboot.common.exception.NotFoundException;
+import com.classflow.backendspringboot.academic.enrollment.EnrollmentRepository;
 import com.classflow.backendspringboot.student.course.Course;
 import com.classflow.backendspringboot.student.course.CourseRepository;
 import com.classflow.backendspringboot.student.resource.Resource;
 import com.classflow.backendspringboot.student.resource.ResourceRepository;
+import com.classflow.backendspringboot.user.Role;
 import com.classflow.backendspringboot.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,25 +17,43 @@ import org.springframework.util.StringUtils;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TeacherCourseService {
     private final CourseRepository courses;
     private final ResourceRepository resources;
     private final FileStorageService files;
+    private final EnrollmentRepository enrollments;
 
-    public TeacherCourseService(CourseRepository courses, ResourceRepository resources, FileStorageService files) {
+    public TeacherCourseService(CourseRepository courses, ResourceRepository resources,
+                                FileStorageService files, EnrollmentRepository enrollments) {
         this.courses = courses;
         this.resources = resources;
         this.files = files;
+        this.enrollments = enrollments;
     }
 
     @Transactional(readOnly = true)
     public List<CourseItem> courses(User teacher) {
         return courses.findByTeacherIdAndActiveTrueOrderByTitleAsc(teacher.getId()).stream()
                 .map(course -> new CourseItem(course.getId(), course.getCode(), course.getTitle(),
-                        course.getDescription(), course.getClassGroup() == null ? null : course.getClassGroup().getName()))
+                        course.getDescription(), className(course)))
                 .toList();
+    }
+
+    @Transactional
+    public CourseItem createCourse(User teacher, CourseRequest request) {
+        if (!StringUtils.hasText(request.title()) || request.title().trim().length() > 200) {
+            throw new IllegalArgumentException("Title is required and must be at most 200 characters");
+        }
+        Course course = new Course();
+        course.setCode("CF-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase());
+        course.setTitle(request.title().trim());
+        course.setDescription(StringUtils.hasText(request.description()) ? request.description().trim() : null);
+        course.setTeacher(teacher);
+        Course saved = courses.save(course);
+        return new CourseItem(saved.getId(), saved.getCode(), saved.getTitle(), saved.getDescription(), null);
     }
 
     @Transactional(readOnly = true)
@@ -50,6 +70,15 @@ public class TeacherCourseService {
         resource.setCourse(requireCourse(teacher, courseId));
         apply(resource, request, true);
         return toItem(resources.save(resource));
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentItem> students(User teacher, long courseId) {
+        requireCourse(teacher, courseId);
+        return enrollments.findStudentsByCourseId(courseId, Role.STUDENT).stream()
+                .map(student -> new StudentItem(student.getId(), student.getFirstName(), student.getLastName(),
+                        student.getEmail()))
+                .toList();
     }
 
     @Transactional
@@ -70,6 +99,16 @@ public class TeacherCourseService {
     private Course requireCourse(User teacher, long courseId) {
         return courses.findByIdAndTeacherIdAndActiveTrue(courseId, teacher.getId())
                 .orElseThrow(() -> new NotFoundException("Course not found"));
+    }
+
+    private static String className(Course course) {
+        if (!course.getAcademicClasses().isEmpty()) {
+            return course.getAcademicClasses().stream()
+                    .map(academicClass -> academicClass.getFiliere().getName() + " · " + academicClass.getName())
+                    .sorted()
+                    .collect(java.util.stream.Collectors.joining(", "));
+        }
+        return course.getClassGroup() == null ? null : course.getClassGroup().getName();
     }
 
     private void apply(Resource resource, ResourceRequest request, boolean created) {
@@ -131,6 +170,8 @@ public class TeacherCourseService {
     }
 
     public record CourseItem(Long id, String code, String title, String description, String className) {}
+    public record CourseRequest(String title, String description) {}
+    public record StudentItem(Long id, String firstName, String lastName, String email) {}
     public record ResourceRequest(String title, ResourceType resourceType, String contentBody,
                                   String fileName, String fileUrl) {}
     public record ResourceItem(Long id, Long courseId, String title, ResourceType resourceType,

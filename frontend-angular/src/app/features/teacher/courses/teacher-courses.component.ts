@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TeacherApiService, TeacherCourse, TeacherResource } from '../../../core/services/teacher-api.service';
+import { TeacherApiService, TeacherCourse, TeacherCourseStudent, TeacherResource } from '../../../core/services/teacher-api.service';
 import { validateUploadFile } from '../../../shared/validation/file-upload.validation';
 
 interface ClassSpace {
@@ -21,6 +21,9 @@ interface ClassSpace {
           <h1>Mes cours</h1>
           <p>Retrouvez les supports et ressources, organisés par classe.</p>
         </div>
+        <button type="button" class="primary" (click)="toggleCourseCreate()">
+          {{ courseCreateOpen() ? 'Fermer' : 'Créer un cours' }}
+        </button>
         @if (courses().length) {
           <div class="course-total"><span aria-hidden="true">▤</span><strong>{{ courses().length }}</strong><span>cours</span></div>
         }
@@ -28,6 +31,22 @@ interface ClassSpace {
 
       @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
       @if (notice()) { <p class="notice" role="status">{{ notice() }}</p> }
+      @if (courseCreateOpen()) {
+        <form class="editor create-course-form" (ngSubmit)="createCourse()">
+          <div class="editor-head"><div><p class="eyebrow">NOUVEAU COURS</p><h2>Créer un cours que vous enseignerez</h2></div></div>
+          <label for="course-title">Titre du cours
+            <input id="course-title" name="courseTitle" [(ngModel)]="courseTitle" maxlength="200" required [disabled]="savingCourse()" placeholder="Ex. Introduction à la biologie" />
+          </label>
+          <label for="course-description">Description
+            <textarea id="course-description" name="courseDescription" [(ngModel)]="courseDescription" maxlength="5000" rows="3" [disabled]="savingCourse()" placeholder="Présentez brièvement le cours (facultatif)…"></textarea>
+          </label>
+          <p class="panel-footnote">Le cours sera créé dans votre espace et pourra ensuite être assigné à une classe par l’administration.</p>
+          <div class="actions">
+            <button class="primary" type="submit" [disabled]="savingCourse() || !courseTitle.trim()">{{ savingCourse() ? 'Création…' : 'Créer le cours' }}</button>
+            <button class="secondary" type="button" [disabled]="savingCourse()" (click)="courseCreateOpen.set(false)">Annuler</button>
+          </div>
+        </form>
+      }
       @if (loadingCourses()) {
         <section class="loading-panel" role="status"><span class="loader" aria-hidden="true"></span>Chargement de vos espaces de classe…</section>
       } @else if (!courses().length) {
@@ -78,6 +97,25 @@ interface ClassSpace {
             <button type="button" class="primary add-button" [disabled]="!selectedCourse()" (click)="newResource()">
               <span aria-hidden="true">＋</span> Déposer un contenu
             </button>
+            <button type="button" class="secondary add-button roster-button" [disabled]="!selectedCourse()" (click)="toggleRoster()">
+              {{ rosterOpen() ? 'Masquer les étudiants' : 'Voir les étudiants inscrits' }}
+            </button>
+            @if (rosterOpen()) {
+              <section class="course-roster" aria-label="Étudiants inscrits au cours">
+                <h3>Étudiants · {{ selectedCourse()?.title }}</h3>
+                @if (loadingRoster()) {
+                  <p role="status">Chargement des étudiants…</p>
+                } @else {
+                  <ul>
+                    @for (student of roster(); track student.id) {
+                      <li><strong>{{ student.firstName }} {{ student.lastName }}</strong><small>{{ student.email }}</small></li>
+                    } @empty {
+                      <li>Aucun étudiant inscrit pour le moment.</li>
+                    }
+                  </ul>
+                }
+              </section>
+            }
             <p class="panel-footnote">Le contenu publié est visible dans le cours sélectionné.</p>
           </aside>
 
@@ -184,6 +222,7 @@ interface ClassSpace {
     .primary{color:white;background:#393575}.primary:hover{background:#2c2a61;transform:translateY(-1px)}.primary:disabled{opacity:.55;cursor:not-allowed;transform:none}.add-button{width:100%}.add-button span{font-size:1rem}
     .secondary{color:#514e76;background:#f0eff8}.secondary:hover{background:#e8e6f4}
     .panel-footnote{margin:10px 0 0;color:#8b889c;font-size:.66rem;line-height:1.45}
+    .course-roster{margin-top:12px;padding-top:12px;border-top:1px solid #efedf5}
     .content{padding:19px}.list-head,.editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.list-head{margin-bottom:10px}.list-head h2,.editor-head h2{margin:0;color:#34324f;font-size:1.12rem;letter-spacing:-.025em}.list-head .eyebrow{margin-bottom:4px}
     .list-context{margin:5px 0 0;color:#858297;font-size:.72rem}.list-context span{padding:0 3px;color:#b1adbf}
     .count{display:grid;width:30px;height:30px;flex:0 0 auto;place-items:center;border:1px solid #e9e6f5;border-radius:9px;color:#655ca9;background:#f6f5fc;font-size:.75rem;font-weight:800}
@@ -238,6 +277,11 @@ export class TeacherCoursesComponent implements OnInit {
   readonly selectedCourseId = signal<number | null>(null);
   readonly loadingCourses = signal(true);
   readonly loadingResources = signal(false);
+  readonly loadingRoster = signal(false);
+  readonly rosterOpen = signal(false);
+  readonly roster = signal<TeacherCourseStudent[]>([]);
+  readonly courseCreateOpen = signal(false);
+  readonly savingCourse = signal(false);
   readonly formOpen = signal(false);
   readonly saving = signal(false);
   readonly editingId = signal<number | null>(null);
@@ -252,6 +296,8 @@ export class TeacherCoursesComponent implements OnInit {
   fileName = '';
   fileUrl = '';
   selectedFile: File | null = null;
+  courseTitle = '';
+  courseDescription = '';
 
   ngOnInit() {
     this.api.courses().subscribe({
@@ -275,6 +321,11 @@ export class TeacherCoursesComponent implements OnInit {
   }
   classInitial(name: string) { return name.charAt(0).toLocaleUpperCase('fr'); }
 
+  toggleCourseCreate() {
+    this.courseCreateOpen.update(open => !open);
+    this.error.set('');
+  }
+
   selectClass(name: string) {
     this.selectedClassName.set(name);
     this.notice.set('');
@@ -291,9 +342,55 @@ export class TeacherCoursesComponent implements OnInit {
     if (!Number.isFinite(courseId) || !this.visibleCourses().some(course => course.id === courseId)) return;
     this.selectedCourseId.set(courseId);
     this.resources.set([]);
+    this.roster.set([]);
+    this.rosterOpen.set(false);
     this.error.set('');
     this.closeForm();
     this.loadResources(courseId);
+  }
+
+  createCourse() {
+    const title = this.courseTitle.trim();
+    if (!title || this.savingCourse()) return;
+    this.savingCourse.set(true);
+    this.error.set('');
+    this.api.createCourse({ title, description: this.courseDescription.trim() || undefined }).subscribe({
+      next: course => {
+        this.courses.update(values => [...values, course]);
+        this.selectedClassName.set(course.className || 'Classe non précisée');
+        this.courseCreateOpen.set(false);
+        this.courseTitle = '';
+        this.courseDescription = '';
+        this.notice.set('Cours créé. Il est prêt à être assigné à une classe par l’administration.');
+        this.selectCourse(course.id);
+      },
+      error: () => {
+        this.error.set('La création du cours a échoué. Vérifiez le titre et réessayez.');
+        this.savingCourse.set(false);
+      },
+      complete: () => this.savingCourse.set(false)
+    });
+  }
+
+  toggleRoster() {
+    const courseId = this.selectedCourseId();
+    if (!courseId) return;
+    if (this.rosterOpen()) {
+      this.rosterOpen.set(false);
+      return;
+    }
+    this.rosterOpen.set(true);
+    this.loadingRoster.set(true);
+    this.api.courseStudents(courseId).subscribe({
+      next: students => {
+        if (this.selectedCourseId() === courseId) this.roster.set(students);
+      },
+      error: () => {
+        if (this.selectedCourseId() === courseId) this.error.set('Impossible de charger les étudiants inscrits.');
+        this.loadingRoster.set(false);
+      },
+      complete: () => this.loadingRoster.set(false)
+    });
   }
 
   loadResources(id: number) {

@@ -5,6 +5,9 @@ export type TeacherResourceType = 'TEXT' | 'LINK' | 'FILE';
 export interface TeacherCourse {
   id: number; code: string; title: string; description?: string; className?: string;
 }
+export interface TeacherCourseStudent {
+  id: number; firstName: string; lastName: string; email: string;
+}
 export interface TeacherResource {
   id: number; courseId: number; title: string; resourceType: TeacherResourceType;
   contentBody?: string; fileName: string; fileUrl: string; publishedAt: string; updatedAt?: string;
@@ -50,6 +53,12 @@ export class TeacherApiService {
   private readonly base = '/api/teacher';
 
   courses() { return this.http.get<TeacherCourse[]>(`${this.base}/courses`); }
+  createCourse(body: { title: string; description?: string }) {
+    return this.http.post<TeacherCourse>(`${this.base}/courses`, body);
+  }
+  courseStudents(courseId: number) {
+    return this.http.get<TeacherCourseStudent[]>(`${this.base}/courses/${courseId}/students`);
+  }
   uploadFile(file: File) {
     const form = new FormData();
     form.append('file', file);

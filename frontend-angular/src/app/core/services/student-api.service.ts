@@ -2,7 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import {
   AssignmentDetail, AssignmentListItem, AttendanceOverview, CourseDetail, CourseSummary,
-  GradeItem, NotificationItem, Profile, RequestDocument, SessionItem, TeacherContact, StudentMessage, StudentFeedItem, AbsenceJustification
+  GradeItem, NotificationItem, Profile, RequestDocument, SessionItem, TeacherContact, StudentMessage, StudentFeedItem, AbsenceJustification,
+  CourseResource
 } from '../../shared/models/student.model';
 
 @Injectable({ providedIn: 'root' })
@@ -36,6 +37,11 @@ export class StudentApiService {
   markRead(id: number) { return this.http.post<void>(`${this.base}/notifications/${id}/read`, {}); }
   markAllRead() { return this.http.post<void>(`${this.base}/notifications/read-all`, {}); }
   requestDocuments() { return this.http.get<RequestDocument[]>(`${this.base}/request-documents`); }
+  resources(q?: string) {
+    let params = new HttpParams();
+    if (q) params = params.set('q', q);
+    return this.http.get<CourseResource[]>(`${this.base}/resources`, { params });
+  }
   profile() { return this.http.get<Profile>(`${this.base}/profile`); }
   updateProfile(body: { phone?: string; photoUrl?: string }) { return this.http.put<Profile>(`${this.base}/profile`, body); }
   changePassword(body: { currentPassword: string; newPassword: string }) {

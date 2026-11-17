@@ -41,6 +41,10 @@ export interface NotificationItem {
 export interface RequestDocument {
   id: number; title: string; description?: string; fileName: string; fileUrl: string; publishedAt: string;
 }
+export interface CourseResource {
+  id: number; courseId: number; courseTitle: string; courseCode: string;
+  title: string; resourceType: string; contentBody?: string; fileName: string; fileUrl: string; publishedAt: string;
+}
 export interface Profile {
   id: number; firstName: string; lastName: string; email: string; studentNumber?: string;
   departmentName?: string; className?: string; phone?: string; photoUrl?: string; courseTitles: string[];

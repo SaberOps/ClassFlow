@@ -16,9 +16,11 @@ describe('TeacherCoursesComponent', () => {
 
   beforeEach(() => {
     api = jasmine.createSpyObj<TeacherApiService>('TeacherApiService', [
-      'courses', 'resources', 'createResource', 'updateResource', 'deleteResource', 'uploadFile'
+      'courses', 'createCourse', 'courseStudents', 'resources', 'createResource', 'updateResource', 'deleteResource', 'uploadFile'
     ]);
     api.courses.and.returnValue(of(courses));
+    api.createCourse.and.returnValue(of({ id: 303, code: 'CF-303', title: 'Biologie' }));
+    api.courseStudents.and.returnValue(of([{ id: 2, firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test' }]));
     api.resources.and.returnValue(of([]));
     api.createResource.and.returnValue(of({} as TeacherResource));
     api.updateResource.and.returnValue(of({} as TeacherResource));
@@ -61,5 +63,20 @@ describe('TeacherCoursesComponent', () => {
     }));
     expect(component.selectedClassName()).toBe('Classe 3B');
     expect(component.notice()).toContain('cours sélectionné');
+  });
+
+  it('creates a course and displays its enrolled-student roster within the selected course', () => {
+    component.courseTitle = 'Biologie';
+    component.courseDescription = 'Introduction';
+
+    component.createCourse();
+
+    expect(api.createCourse).toHaveBeenCalledWith({ title: 'Biologie', description: 'Introduction' });
+    expect(component.selectedCourseId()).toBe(303);
+
+    component.toggleRoster();
+
+    expect(api.courseStudents).toHaveBeenCalledWith(303);
+    expect(component.roster().map(student => student.email)).toEqual(['ada@example.test']);
   });
 });

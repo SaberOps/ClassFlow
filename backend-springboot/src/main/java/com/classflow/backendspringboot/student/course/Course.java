@@ -1,5 +1,6 @@
 package com.classflow.backendspringboot.student.course;
 
+import com.classflow.backendspringboot.academic.AcademicClass;
 import com.classflow.backendspringboot.academic.classgroup.ClassGroup;
 import com.classflow.backendspringboot.user.User;
 import jakarta.persistence.*;
@@ -33,6 +34,13 @@ public class Course {
     @JoinColumn(name = "class_group_id")
     private ClassGroup classGroup;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "course_class_assignments",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "class_id"))
+    private java.util.Set<AcademicClass> academicClasses = new java.util.LinkedHashSet<>();
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -53,6 +61,9 @@ public class Course {
     public void setTeacher(User teacher) { this.teacher = teacher; }
     public ClassGroup getClassGroup() { return classGroup; }
     public void setClassGroup(ClassGroup classGroup) { this.classGroup = classGroup; }
+    public java.util.Set<AcademicClass> getAcademicClasses() { return academicClasses; }
+    public void assignTo(AcademicClass academicClass) { academicClasses.add(academicClass); }
+    public void unassignFrom(AcademicClass academicClass) { academicClasses.remove(academicClass); }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 }

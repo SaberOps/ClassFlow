@@ -5,6 +5,27 @@ import { Observable } from 'rxjs';
 import { apiErrorMessage } from '../users/admin-user.service';
 import { AcademicClass, AcademicStudent, Filiere } from './academic.model';
 
+export interface CourseAssignmentCourse {
+  id: number;
+  teacherId: number;
+  title: string;
+  code: string;
+  assignedClasses: { id: number; name: string; filiereName: string }[];
+}
+
+export interface CourseAssignmentTeacher {
+  id: number;
+  firstName: string;
+  lastName: string;
+  courses: CourseAssignmentCourse[];
+}
+
+export interface CourseAssignmentClass {
+  id: number;
+  name: string;
+  filiereName: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AcademicAdminService {
   private readonly http = inject(HttpClient);
@@ -12,6 +33,25 @@ export class AcademicAdminService {
 
   list(): Observable<Filiere[]> {
     return this.http.get<Filiere[]>(this.baseUrl);
+  }
+
+  courseAssignmentOptions(): Observable<{
+    teachers: CourseAssignmentTeacher[];
+    classes: CourseAssignmentClass[];
+  }> {
+    return this.http.get<{ teachers: CourseAssignmentTeacher[]; classes: CourseAssignmentClass[] }>(
+      `${this.baseUrl}/course-assignment-options`,
+    );
+  }
+
+  assignCourse(teacherId: number, courseId: number, classId: number): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/course-assignments`, { teacherId, courseId, classId });
+  }
+
+  unassignCourse(courseId: number, classId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/course-assignments`, {
+      params: { courseId, classId },
+    });
   }
 
   createFiliere(name: string): Observable<Filiere> {

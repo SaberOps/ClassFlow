@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 import { AcademicAdminService, apiErrorMessage } from './academic-admin.service';
 import { AcademicClass, Filiere } from './academic.model';
+import { CourseAssignmentClass, CourseAssignmentCourse, CourseAssignmentTeacher } from './academic-admin.service';
 
 type DeleteAction =
   | { kind: 'filiere'; id: number; name: string; classCount: number; studentCount: number }
@@ -27,6 +28,11 @@ export class FiliereManagementComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly message = signal<{ type: 'success' | 'error'; text: string } | null>(null);
   protected readonly pending = signal<DeleteAction | null>(null);
+  protected readonly assignmentTeachers = signal<CourseAssignmentTeacher[]>([]);
+  protected readonly assignmentClasses = signal<CourseAssignmentClass[]>([]);
+  protected assignmentTeacherId: number | null = null;
+  protected assignmentCourseId: number | null = null;
+  protected assignmentClassId: number | null = null;
 
   ngOnInit(): void {
     this.load();
@@ -34,6 +40,13 @@ export class FiliereManagementComponent implements OnInit {
 
   protected load(): void {
     this.loading.set(true);
+    this.api.courseAssignmentOptions().subscribe({
+      next: (options) => {
+        this.assignmentTeachers.set(options.teachers);
+        this.assignmentClasses.set(options.classes);
+      },
+      error: (error: unknown) => this.showError(error),
+    });
     this.api.list().subscribe({
       next: (filieres) => {
         this.filieres.set(filieres);
@@ -44,6 +57,42 @@ export class FiliereManagementComponent implements OnInit {
         this.showError(error);
       },
     });
+  }
+
+  protected coursesForTeacher(teacherId: number | null): CourseAssignmentTeacher['courses'] {
+    return this.assignmentTeachers().find((teacher) => teacher.id === Number(teacherId))?.courses ?? [];
+  }
+
+  protected assignedClassLabel(course: CourseAssignmentCourse): string {
+    return course.assignedClasses.length
+      ? ` · attribué à ${course.assignedClasses.map(item => `${item.filiereName} / ${item.name}`).join(', ')}`
+      : '';
+  }
+
+  protected unassignCourse(courseId: number, classId: number): void {
+    if (this.saving()) return;
+    this.runMutation(
+      this.api.unassignCourse(courseId, classId),
+      'Cours retiré de la classe. Les inscriptions déjà enregistrées sont conservées.',
+    );
+  }
+
+  protected selectAssignmentTeacher(teacherId: number | null): void {
+    this.assignmentTeacherId = teacherId;
+    this.assignmentCourseId = null;
+  }
+
+  protected assignCourse(): void {
+    if (!this.assignmentTeacherId || !this.assignmentCourseId || !this.assignmentClassId || this.saving()) return;
+    this.runMutation(
+      this.api.assignCourse(this.assignmentTeacherId, this.assignmentCourseId, this.assignmentClassId),
+      'Course assigned to the selected class. Its current and future students will be enrolled.',
+      () => {
+        this.assignmentTeacherId = null;
+        this.assignmentCourseId = null;
+        this.assignmentClassId = null;
+      },
+    );
   }
 
   protected createFiliere(input: HTMLInputElement): void {

@@ -35,8 +35,9 @@ public class AdminTimetableController {
 
     @GetMapping("/week")
     public AdminTimetableDtos.WeekResponse week(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start) {
-        return service.week(start);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam Long filiereId) {
+        return service.week(start, filiereId);
     }
 
     @PostMapping

@@ -1,7 +1,9 @@
 
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
+import { AcademicAdminService } from '../academic/academic-admin.service';
+import { AcademicClass, AcademicStudent } from '../academic/academic.model';
 import { AdminTeacherService } from './admin-teacher.service';
 import { TeacherCreatedResponse } from './teacher.model';
 import { teacherApiErrorMessage } from './admin-teacher.service';
@@ -14,13 +16,17 @@ import { teacherApiErrorMessage } from './admin-teacher.service';
   styleUrl: './teacher-create.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherCreateComponent {
+export class TeacherCreateComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly teacherService = inject(AdminTeacherService);
+  private readonly academicService = inject(AcademicAdminService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal('');
   readonly createdTeacher = signal<TeacherCreatedResponse | null>(null);
+  readonly createdStudent = signal<AcademicStudent | null>(null);
+  readonly role = signal<'TEACHER' | 'STUDENT'>('TEACHER');
+  readonly classes = signal<Array<AcademicClass & { filiereName: string }>>([]);
 
   readonly teacherForm = this.fb.group({
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
@@ -29,10 +35,30 @@ export class TeacherCreateComponent {
     subjects: ['', Validators.required],
   });
 
-  createTeacher(): void {
-	console.log('Statut du formulaire :', this.teacherForm.status);
-	console.log('Erreurs e-mail :', this.teacherForm.controls.email.errors);
+  readonly studentForm = this.fb.group({
+    firstName: ['', [Validators.required, Validators.maxLength(100)]],
+    lastName: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
+    nationalId: ['', [Validators.required, Validators.maxLength(40)]],
+    classId: [null as number | null, Validators.required],
+  });
 
+  ngOnInit(): void {
+    this.academicService.list().subscribe({
+      next: (filieres) => this.classes.set(filieres.flatMap((filiere) =>
+        filiere.classes.map((academicClass) => ({ ...academicClass, filiereName: filiere.name })))),
+      error: () => this.errorMessage.set('Impossible de charger les classes. Réessayez plus tard.'),
+    });
+  }
+
+  setRole(role: 'TEACHER' | 'STUDENT'): void {
+    this.role.set(role);
+    this.errorMessage.set('');
+    this.createdTeacher.set(null);
+    this.createdStudent.set(null);
+  }
+
+  createTeacher(): void {
     if (this.teacherForm.invalid) {
       this.teacherForm.markAllAsTouched();
       return;
@@ -56,6 +82,7 @@ export class TeacherCreateComponent {
 
     this.errorMessage.set('');
     this.createdTeacher.set(null);
+    this.createdStudent.set(null);
     this.saving.set(true);
 
     this.teacherService.createTeacher({
@@ -67,6 +94,36 @@ export class TeacherCreateComponent {
       next: (response) => {
         this.createdTeacher.set(response);
         this.teacherForm.reset();
+        this.saving.set(false);
+      },
+      error: (error: unknown) => {
+        this.errorMessage.set(teacherApiErrorMessage(error));
+        this.saving.set(false);
+      },
+    });
+  }
+
+  createStudent(): void {
+    if (this.studentForm.invalid) {
+      this.studentForm.markAllAsTouched();
+      return;
+    }
+    const values = this.studentForm.getRawValue();
+    if (!values.classId) return;
+    this.errorMessage.set('');
+    this.createdTeacher.set(null);
+    this.createdStudent.set(null);
+    this.saving.set(true);
+    this.academicService.createStudent(
+      values.classId,
+      values.firstName!.trim(),
+      values.lastName!.trim(),
+      values.email!.trim(),
+      values.nationalId!.trim(),
+    ).subscribe({
+      next: (student) => {
+        this.createdStudent.set(student);
+        this.studentForm.reset();
         this.saving.set(false);
       },
       error: (error: unknown) => {

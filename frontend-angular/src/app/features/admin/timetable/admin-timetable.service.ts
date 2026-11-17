@@ -1,9 +1,16 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
+export interface TimetableFiliereOption {
+  id: number;
+  name: string;
+}
+
 export interface TimetableClassOption {
   id: number;
   name: string;
+  filiereId: number;
+  filiereName: string;
 }
 
 export interface TimetableCourseOption {
@@ -12,6 +19,7 @@ export interface TimetableCourseOption {
   title: string;
   teacherId: number;
   teacherName: string;
+  classIds: number[];
 }
 
 export interface TimetableTeacherOption {
@@ -22,6 +30,7 @@ export interface TimetableTeacherOption {
 }
 
 export interface AdminTimetableOptions {
+  filieres: TimetableFiliereOption[];
   classes: TimetableClassOption[];
   courses: TimetableCourseOption[];
   teachers: TimetableTeacherOption[];
@@ -59,9 +68,9 @@ export class AdminTimetableService {
     return this.http.get<AdminTimetableOptions>(`${this.baseUrl}/options`);
   }
 
-  week(start: string) {
+  week(start: string, filiereId: number) {
     return this.http.get<{ sessions: AdminTimetableSession[] }>(`${this.baseUrl}/week`, {
-      params: new HttpParams().set('start', start)
+      params: new HttpParams().set('start', start).set('filiereId', filiereId)
     });
   }
 

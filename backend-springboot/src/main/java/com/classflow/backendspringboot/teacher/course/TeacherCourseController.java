@@ -28,6 +28,19 @@ public class TeacherCourseController {
         return service.courses(currentTeacher.require(auth));
     }
 
+    @PostMapping("/courses")
+    @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public TeacherCourseService.CourseItem createCourse(
+            Authentication auth, @Valid @RequestBody CreateCourseRequest request) {
+        return service.createCourse(currentTeacher.require(auth),
+                new TeacherCourseService.CourseRequest(request.title(), request.description()));
+    }
+
+    @GetMapping("/courses/{courseId}/students")
+    public List<TeacherCourseService.StudentItem> students(Authentication auth, @PathVariable long courseId) {
+        return service.students(currentTeacher.require(auth), courseId);
+    }
+
     @GetMapping("/courses/{courseId}/content")
     public List<TeacherCourseService.ResourceItem> content(Authentication auth, @PathVariable long courseId) {
         return service.resources(currentTeacher.require(auth), courseId);
@@ -59,4 +72,7 @@ public class TeacherCourseController {
             return new TeacherCourseService.ResourceRequest(title, resourceType, contentBody, fileName, fileUrl);
         }
     }
+
+    public record CreateCourseRequest(@NotBlank @Size(max = 200) String title,
+                                      @Size(max = 5000) String description) {}
 }

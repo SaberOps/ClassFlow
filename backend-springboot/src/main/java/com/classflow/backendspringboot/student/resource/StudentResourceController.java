@@ -25,6 +25,12 @@ public class StudentResourceController {
         return service.listByCourse(currentStudent.require(auth), courseId);
     }
 
+    @GetMapping("/resources")
+    public List<ResourceDtos.ResourceItem> search(
+            Authentication auth, @RequestParam(required = false) String q) {
+        return service.search(currentStudent.require(auth), q);
+    }
+
     @GetMapping("/resources/{id}")
     public ResourceDtos.ResourceItem one(Authentication auth, @PathVariable Long id) {
         return service.getAccessible(currentStudent.require(auth), id);

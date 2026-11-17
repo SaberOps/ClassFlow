@@ -2,6 +2,7 @@ package com.classflow.backendspringboot.admin.timetable;
 
 import com.classflow.backendspringboot.academic.AcademicClass;
 import com.classflow.backendspringboot.academic.AcademicClassRepository;
+import com.classflow.backendspringboot.academic.FiliereRepository;
 import com.classflow.backendspringboot.common.exception.ConflictException;
 import com.classflow.backendspringboot.common.exception.NotFoundException;
 import com.classflow.backendspringboot.student.course.Course;
@@ -26,16 +27,19 @@ public class AdminTimetableService {
 
     private final TimetableSessionRepository sessions;
     private final AcademicClassRepository classes;
+    private final FiliereRepository filieres;
     private final CourseRepository courses;
     private final AdminUserRepository users;
 
     public AdminTimetableService(
             TimetableSessionRepository sessions,
             AcademicClassRepository classes,
+            FiliereRepository filieres,
             CourseRepository courses,
             AdminUserRepository users) {
         this.sessions = sessions;
         this.classes = classes;
+        this.filieres = filieres;
         this.courses = courses;
         this.users = users;
     }
@@ -44,7 +48,11 @@ public class AdminTimetableService {
     public AdminTimetableDtos.OptionsResponse options() {
         List<AdminTimetableDtos.ClassOption> classOptions = classes.findAllByOrderByNameAsc().stream()
                 .map(academicClass -> new AdminTimetableDtos.ClassOption(
-                        academicClass.getId(), academicClass.getName()))
+                        academicClass.getId(), academicClass.getName(),
+                        academicClass.getFiliere().getId(), academicClass.getFiliere().getName()))
+                .toList();
+        List<AdminTimetableDtos.FiliereOption> filiereOptions = filieres.findAllByOrderByNameAsc().stream()
+                .map(filiere -> new AdminTimetableDtos.FiliereOption(filiere.getId(), filiere.getName()))
                 .toList();
         List<AdminTimetableDtos.CourseOption> courseOptions = courses.findAllByActiveTrueOrderByTitleAsc().stream()
                 .filter(course -> course.getTeacher().getRole() == Role.TEACHER
@@ -55,7 +63,8 @@ public class AdminTimetableService {
                         course.getCode(),
                         course.getTitle(),
                         course.getTeacher().getId(),
-                        fullName(course.getTeacher())))
+                        fullName(course.getTeacher()),
+                        courses.findAssignedClasses(course.getId()).stream().map(AcademicClass::getId).toList()))
                 .toList();
         List<AdminTimetableDtos.TeacherOption> teacherOptions = users
                 .findAllByRoleAndEnabledTrueAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(Role.TEACHER)
@@ -66,14 +75,14 @@ public class AdminTimetableService {
                         teacher.getLastName(),
                         teacher.getEmail()))
                 .toList();
-        return new AdminTimetableDtos.OptionsResponse(classOptions, courseOptions, teacherOptions);
+        return new AdminTimetableDtos.OptionsResponse(filiereOptions, classOptions, courseOptions, teacherOptions);
     }
 
     @Transactional(readOnly = true)
-    public AdminTimetableDtos.WeekResponse week(LocalDate start) {
+    public AdminTimetableDtos.WeekResponse week(LocalDate start, Long filiereId) {
         Instant from = start.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant to = start.plusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC);
-        List<AdminTimetableDtos.SessionItem> items = sessions.findBetween(from, to).stream()
+        List<AdminTimetableDtos.SessionItem> items = sessions.findForFiliereBetween(filiereId, from, to).stream()
                 .map(this::toItem)
                 .toList();
         return new AdminTimetableDtos.WeekResponse(items);
@@ -113,6 +122,10 @@ public class AdminTimetableService {
         User teacher = users.findByIdAndDeletedAtIsNull(request.teacherId())
                 .filter(user -> user.getRole() == Role.TEACHER && user.isEnabled())
                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
+        if (!course.getTeacher().getId().equals(teacher.getId())
+                || !courses.existsByIdAndAcademicClasses_Id(course.getId(), academicClass.getId())) {
+            throw new ConflictException("The selected teacher, course, and class are not assigned together");
+        }
 
         String room = normalizeRoom(request.room());
         List<TimetableSession> overlapping = sessions.findOverlapping(

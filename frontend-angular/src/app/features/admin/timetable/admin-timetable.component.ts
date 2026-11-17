@@ -46,12 +46,30 @@ function emptyDraft(): SessionDraft {
         </div>
       </header>
 
+      @if (options(); as timetableOptions) {
+        <section class="calendar-context" aria-label="Contexte du calendrier">
+          <label for="filiere-context">Filière
+            <select id="filiere-context" name="filiereId" [ngModel]="filiereId"
+              [ngModelOptions]="{standalone:true}" (ngModelChange)="selectFiliere($event)">
+              @for (filiere of timetableOptions.filieres; track filiere.id) {
+                <option [ngValue]="filiere.id">{{ filiere.name }}</option>
+              }
+            </select>
+          </label>
+          <label for="calendar-date">Date de référence
+            <input id="calendar-date" name="calendarDate" type="date" [(ngModel)]="selectedDate"
+              [ngModelOptions]="{standalone:true}" (ngModelChange)="selectDate($event)">
+          </label>
+          <p>Agenda limité aux classes de la filière sélectionnée.</p>
+        </section>
+      }
+
       <div class="workspace">
         <section class="agenda panel" aria-labelledby="agenda-title">
           <div class="agenda-heading">
             <div>
               <p class="eyebrow">VUE HEBDOMADAIRE</p>
-              <h2 id="agenda-title">Agenda des séances</h2>
+              <h2 id="agenda-title">Agenda · {{ selectedFiliereName() }}</h2>
             </div>
             <div class="week-controls" aria-label="Navigation dans l’agenda">
               <button type="button" class="icon-button" aria-label="Semaine précédente" (click)="moveWeek(-7)">←</button>
@@ -59,7 +77,7 @@ function emptyDraft(): SessionDraft {
               <button type="button" class="icon-button" aria-label="Semaine suivante" (click)="moveWeek(7)">→</button>
             </div>
           </div>
-          <div class="week-range">{{ formatRange() }}</div>
+          <div class="week-range">{{ formatRange() }} <strong class="selected-date">Date choisie · {{ formatSelectedDate() }}</strong></div>
 
           @if (weekLoading()) {
             <p class="status loading" role="status">Chargement de l’agenda…</p>
@@ -78,7 +96,9 @@ function emptyDraft(): SessionDraft {
           } @else {
             <div class="day-list">
               @for (group of days(); track dayKey(group.date)) {
-                <section class="day-group" [class.today]="isToday(group.date)" [attr.aria-label]="formatDay(group.date)">
+                <section class="day-group" [class.today]="isToday(group.date)" [class.selected]="isSelected(group.date)"
+                  [attr.aria-current]="isSelected(group.date) ? 'date' : null"
+                  [attr.aria-label]="formatDay(group.date) + (isSelected(group.date) ? ' — Date sélectionnée' : '')">
                   <div class="day-marker">
                     <span>{{ formatWeekday(group.date) }}</span>
                     <strong>{{ group.date | date:'d' }}</strong>
@@ -133,30 +153,30 @@ function emptyDraft(): SessionDraft {
             </div>
           } @else if (options()) {
             <form (ngSubmit)="save()" #sessionForm="ngForm">
-              <label for="course">Cours <span aria-hidden="true">*</span></label>
-              <select id="course" name="courseId" required [(ngModel)]="draft.courseId" (ngModelChange)="onCourseChange()">
-                <option [ngValue]="null" disabled>Choisir un cours</option>
-                @for (course of options()!.courses; track course.id) {
-                  <option [ngValue]="course.id">{{ course.code }} · {{ course.title }}</option>
-                }
-              </select>
-
               <label for="class">Classe <span aria-hidden="true">*</span></label>
-              <select id="class" name="classId" required [(ngModel)]="draft.classId">
+              <select id="class" name="classId" required [(ngModel)]="draft.classId" (ngModelChange)="onClassChange()">
                 <option [ngValue]="null" disabled>Choisir une classe</option>
-                @for (classItem of options()!.classes; track classItem.id) {
+                @for (classItem of classesForFiliere(); track classItem.id) {
                   <option [ngValue]="classItem.id">{{ classItem.name }}</option>
                 }
               </select>
 
+              <label for="course">Cours <span aria-hidden="true">*</span></label>
+              <select id="course" name="courseId" required [(ngModel)]="draft.courseId" (ngModelChange)="onCourseChange()">
+                <option [ngValue]="null" disabled>Choisir un cours attribué à cette classe</option>
+                @for (course of coursesForClass(); track course.id) {
+                  <option [ngValue]="course.id">{{ course.code }} · {{ course.title }}</option>
+                }
+              </select>
+
               <label for="teacher">Enseignant <span aria-hidden="true">*</span></label>
-              <select id="teacher" name="teacherId" required [(ngModel)]="draft.teacherId">
+              <select id="teacher" name="teacherId" required [(ngModel)]="draft.teacherId" disabled>
                 <option [ngValue]="null" disabled>Choisir un enseignant</option>
                 @for (teacher of options()!.teachers; track teacher.id) {
                   <option [ngValue]="teacher.id">{{ teacher.firstName }} {{ teacher.lastName }}</option>
                 }
               </select>
-              <p class="field-hint">L’enseignant est proposé automatiquement selon le cours, et peut être modifié.</p>
+              <p class="field-hint">L’enseignant responsable du cours est sélectionné automatiquement.</p>
 
               <div class="time-fields">
                 <div>
@@ -200,6 +220,9 @@ function emptyDraft(): SessionDraft {
     h1{margin:0;color:#292a4d;font-size:clamp(1.75rem,3vw,2.25rem);letter-spacing:-.045em}
     .intro{margin:8px 0 0;color:#77758d;font-size:.88rem}
     .publication-note{display:flex;align-items:center;gap:9px;max-width:310px;padding:11px 14px;border:1px solid #e6e5f1;border-radius:10px;background:#fff;color:#5d5a77;font-size:.75rem;line-height:1.45}
+    .calendar-context{display:flex;gap:12px;margin:0 0 16px;padding:12px;border:1px solid #e6e4f0;border-radius:12px;background:#fff}
+    .calendar-context label{display:grid;gap:5px;margin:0;color:#55516e;font-size:.73rem;font-weight:750}
+    .calendar-context p{margin:auto 0 0;color:#77758d;font-size:.72rem}
     .live-dot{width:8px;height:8px;flex:none;border-radius:50%;background:#56a881;box-shadow:0 0 0 4px #eaf5ef}
     .workspace{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(310px,.8fr);align-items:start;gap:20px}
     .panel{border:1px solid #e8e7f2;border-radius:15px;background:#fff;box-shadow:0 6px 24px rgb(48 43 112 / 3%)}
@@ -212,12 +235,15 @@ function emptyDraft(): SessionDraft {
     .today-button{padding:0 11px;font-size:.76rem;font-weight:750}
     button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b9b4ec;outline-offset:2px}
     button:disabled{opacity:.55;cursor:not-allowed}
-    .week-range{padding:0 22px 16px;color:#77758d;font-size:.76rem}
+    .week-range{padding:0 22px 16px;color:#77758d;font-size:.76rem}.selected-date{margin-left:8px;color:#504a91}
     .day-list{padding:2px 22px 12px}
     .day-group{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:14px;padding:14px 0;border-top:1px solid #efedf5}
     .day-group::before{position:absolute;top:14px;bottom:14px;left:25px;width:2px;border-radius:2px;background:#e8e5f7;content:""}
     .day-marker{position:relative;z-index:1;display:grid;align-content:start;justify-items:center;gap:2px;width:51px;height:66px;padding:6px 3px;border:1px solid #e7e4f5;border-radius:11px;background:#f2f1fc;color:#6b65aa;box-shadow:0 0 0 4px #fff}
     .day-group.today .day-marker{border-color:#d5d0f0;background:#eae8fa;color:#504a91}
+    .day-group.selected .day-marker{border-color:#554da0;background:#554da0;color:#fff}
+    .day-group.selected .day-marker small{color:#efedfc}
+    .day-group.selected::before{background:#8179cd}
     .day-marker span{font-size:.75rem;font-weight:850;letter-spacing:.05em;text-transform:uppercase}
     .day-marker strong{font-size:1.2rem;line-height:1.15}
     .day-marker small{color:#7771a9;font-size:.75rem}
@@ -273,8 +299,7 @@ function emptyDraft(): SessionDraft {
     .status.error{display:flex;justify-content:space-between;align-items:center;gap:10px}
     .editor .status{margin:10px 0}
     @media(max-width:980px){.workspace{grid-template-columns:minmax(0,1.25fr) minmax(290px,.85fr);gap:14px}.day-list{padding-right:16px;padding-left:16px}.agenda-heading{padding-right:16px;padding-left:16px}.week-range{padding-left:16px}.day-group{grid-template-columns:48px minmax(0,1fr);gap:10px}.day-group::before{left:22px}.day-marker{width:45px}.session-row{grid-template-columns:62px minmax(0,1fr);gap:9px}.session-actions{grid-column:2;justify-self:start;margin-top:-3px}}
-    @media(max-width:760px){.timetable-page{padding-top:24px}.page-header{align-items:flex-start;flex-direction:column;gap:14px}.back-link{margin-bottom:14px}.publication-note{max-width:none}.workspace{grid-template-columns:1fr}.editor{grid-row:1}.agenda{grid-row:2}}
-    @media(max-width:440px){.timetable-page{padding-right:13px;padding-left:13px}.agenda-heading{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:12px}.week-controls{grid-row:2;align-self:start;justify-self:end;margin:0}.agenda-heading h2{font-size:.98rem}.day-list{padding-right:12px;padding-left:12px}.day-group{grid-template-columns:42px minmax(0,1fr);gap:8px}.day-group::before{left:20px}.day-marker{width:40px;height:61px}.session-row{grid-template-columns:55px minmax(0,1fr);gap:7px}.session-actions{gap:4px}.edit-button,.delete-button{padding:7px 8px;font-size:.75rem}.session-details p{line-height:1.4}.time-fields{gap:7px}.time-fields input{font-size:.75rem}}
+    @media(max-width:760px){.timetable-page{padding-top:24px}.page-header{align-items:flex-start;flex-direction:column;gap:14px}.back-link{margin-bottom:14px}.publication-note{max-width:none}.calendar-context{align-items:stretch;flex-direction:column;gap:8px}.calendar-context label{min-width:0}.calendar-context p{margin:0}.workspace{grid-template-columns:1fr}.editor{grid-row:1}.agenda{grid-row:2}}
   `]
 })
 export class AdminTimetableComponent implements OnInit {
@@ -291,6 +316,8 @@ export class AdminTimetableComponent implements OnInit {
   readonly deletingId = signal<number | null>(null);
   readonly editingId = signal<number | null>(null);
   readonly weekStart = signal(AdminTimetableComponent.monday(new Date()));
+  filiereId: number | null = null;
+  selectedDate = AdminTimetableComponent.localDateKey(new Date());
   readonly weekEnd = computed(() => {
     const end = new Date(this.weekStart());
     end.setDate(end.getDate() + 6);
@@ -308,20 +335,28 @@ export class AdminTimetableComponent implements OnInit {
       }
       group.sessions.push(session);
     }
-    return [...groups.values()].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const week = this.weekStart();
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(week);
+      date.setDate(date.getDate() + index);
+      return groups.get(AdminTimetableComponent.localDateKey(date)) ?? { date, sessions: [] };
+    });
   });
   draft = emptyDraft();
 
   ngOnInit(): void {
     this.loadOptions();
-    this.loadWeek();
   }
 
   loadOptions(): void {
     this.optionsLoading.set(true);
     this.optionsError.set('');
     this.api.options().subscribe({
-      next: value => this.options.set(value),
+      next: value => {
+        this.options.set(value);
+        if (this.filiereId === null) this.filiereId = value.filieres[0]?.id ?? null;
+        this.loadWeek();
+      },
       error: error => {
         this.optionsError.set(this.errorMessage(error, 'Impossible de charger les cours, classes et enseignants.'));
         this.optionsLoading.set(false);
@@ -331,9 +366,14 @@ export class AdminTimetableComponent implements OnInit {
   }
 
   loadWeek(): void {
+    if (this.filiereId === null) {
+      this.sessions.set([]);
+      this.weekLoading.set(false);
+      return;
+    }
     this.weekLoading.set(true);
     this.weekError.set('');
-    this.api.week(AdminTimetableComponent.localDateKey(this.weekStart())).subscribe({
+    this.api.week(AdminTimetableComponent.localDateKey(this.weekStart()), this.filiereId).subscribe({
       next: value => this.sessions.set([...value.sessions].sort(
         (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
       )),
@@ -349,12 +389,50 @@ export class AdminTimetableComponent implements OnInit {
     const next = new Date(this.weekStart());
     next.setDate(next.getDate() + days);
     this.weekStart.set(next);
+    this.selectedDate = AdminTimetableComponent.localDateKey(next);
     this.loadWeek();
   }
 
   goToday(): void {
     this.weekStart.set(AdminTimetableComponent.monday(new Date()));
+    this.selectedDate = AdminTimetableComponent.localDateKey(new Date());
     this.loadWeek();
+  }
+
+  selectFiliere(value: number | null): void {
+    this.filiereId = value === null ? null : Number(value);
+    this.draft.classId = null;
+    this.draft.courseId = null;
+    this.draft.teacherId = null;
+    this.startNewSession();
+    this.loadWeek();
+  }
+
+  selectDate(value: string): void {
+    if (!value) return;
+    this.selectedDate = value;
+    this.weekStart.set(AdminTimetableComponent.monday(new Date(`${value}T12:00:00`)));
+    this.loadWeek();
+  }
+
+  selectedFiliereName(): string {
+    return this.options()?.filieres.find(item => item.id === this.filiereId)?.name ?? 'Choisir une filière';
+  }
+
+  classesForFiliere() {
+    return this.options()?.classes.filter(item => item.filiereId === this.filiereId) ?? [];
+  }
+
+  coursesForClass() {
+    if (this.draft.classId === null) return [];
+    return this.options()?.courses.filter(course => course.classIds.includes(this.draft.classId!)) ?? [];
+  }
+
+  onClassChange(): void {
+    if (!this.coursesForClass().some(course => course.id === this.draft.courseId)) {
+      this.draft.courseId = null;
+      this.draft.teacherId = null;
+    }
   }
 
   onCourseChange(): void {
@@ -381,6 +459,18 @@ export class AdminTimetableComponent implements OnInit {
       endsAt: this.toLocalInput(session.endsAt),
       room: session.room ?? ''
     };
+    if (this.filiereId !== this.options()?.classes.find(item => item.id === session.classId)?.filiereId) {
+      this.selectFiliere(this.options()?.classes.find(item => item.id === session.classId)?.filiereId ?? null);
+      this.draft = {
+        courseId: session.courseId,
+        classId: session.classId,
+        teacherId: session.teacherId,
+        startsAt: this.toLocalInput(session.startsAt),
+        endsAt: this.toLocalInput(session.endsAt),
+        room: session.room ?? ''
+      };
+      this.editingId.set(session.id);
+    }
   }
 
   save(): void {
@@ -450,6 +540,16 @@ export class AdminTimetableComponent implements OnInit {
 
   isToday(date: Date): boolean {
     return this.dayKey(date) === AdminTimetableComponent.localDateKey(new Date());
+  }
+
+  isSelected(date: Date): boolean {
+    return this.dayKey(date) === this.selectedDate;
+  }
+
+  formatSelectedDate(): string {
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    }).format(new Date(`${this.selectedDate}T12:00:00`));
   }
 
   formatDay(date: Date): string {

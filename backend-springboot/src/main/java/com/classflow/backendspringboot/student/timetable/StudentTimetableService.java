@@ -8,8 +8,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.stream.Collectors;
 
 @Service
 public class StudentTimetableService {
@@ -24,16 +22,7 @@ public class StudentTimetableService {
     public TimetableDtos.WeekResponse week(User student, LocalDate start) {
         Instant from = start.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant to = start.plusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC);
-        var studentSessions = sessions.findForStudentBetween(student.getId(), from, to);
-        var classSessions = sessions.findForStudentClassBetween(student.getId(), from, to);
-        var items = java.util.stream.Stream.concat(studentSessions.stream(), classSessions.stream())
-                .collect(Collectors.toMap(
-                        TimetableSession::getId,
-                        session -> session,
-                        (first, ignored) -> first,
-                        LinkedHashMap::new))
-                .values()
-                .stream()
+        var items = sessions.findForStudentClassBetween(student.getId(), from, to).stream()
                 .sorted(Comparator.comparing(TimetableSession::getStartsAt))
                 .map(s -> new TimetableDtos.SessionItem(
                         s.getId(),

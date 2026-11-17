@@ -1,7 +1,10 @@
 <section class="page">
   <header class="page-header">
-    <h1>Accounts</h1>
-    <p class="subtitle">{{ totalElements() }} account(s)</p>
+    <div>
+      <h1>Accounts</h1>
+      <p class="subtitle">{{ totalElements() }} account(s)</p>
+    </div>
+    <a class="btn" routerLink="/admin/users/new">Create student or teacher</a>
   </header>
 
   @if (message(); as m) {

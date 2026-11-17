@@ -7,12 +7,14 @@ import com.classflow.backendspringboot.academic.dto.FiliereResponse;
 import com.classflow.backendspringboot.academic.dto.StudentResponse;
 import com.classflow.backendspringboot.academic.dto.UpdateStudentLoginRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +37,25 @@ public class AdminAcademicController {
     @GetMapping
     public List<FiliereResponse> list() {
         return service.list();
+    }
+
+    @GetMapping("/course-assignment-options")
+    public AdminAcademicService.CourseAssignmentOptions courseAssignmentOptions() {
+        return service.courseAssignmentOptions();
+    }
+
+    @PostMapping("/course-assignments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AdminAcademicService.CourseAssignmentResponse assignCourse(
+            @Valid @RequestBody CourseAssignmentRequest request) {
+        return service.assignCourse(new AdminAcademicService.CourseAssignmentRequest(
+                request.teacherId(), request.courseId(), request.classId()));
+    }
+
+    @DeleteMapping("/course-assignments")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unassignCourse(@RequestParam Long courseId, @RequestParam Long classId) {
+        service.unassignCourse(courseId, classId);
     }
 
     @PostMapping
@@ -83,4 +104,9 @@ public class AdminAcademicController {
     public void deleteStudent(@PathVariable Long id) {
         service.deleteStudent(id);
     }
+
+    public record CourseAssignmentRequest(
+            @NotNull Long teacherId,
+            @NotNull Long courseId,
+            @NotNull Long classId) {}
 }

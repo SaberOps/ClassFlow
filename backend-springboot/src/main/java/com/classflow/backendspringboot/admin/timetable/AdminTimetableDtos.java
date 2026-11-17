@@ -10,18 +10,22 @@ import java.util.List;
 public final class AdminTimetableDtos {
     private AdminTimetableDtos() {}
 
-    public record ClassOption(Long id, String name) {}
+    public record FiliereOption(Long id, String name) {}
+
+    public record ClassOption(Long id, String name, Long filiereId, String filiereName) {}
 
     public record CourseOption(
             Long id,
             String code,
             String title,
             Long teacherId,
-            String teacherName) {}
+            String teacherName,
+            List<Long> classIds) {}
 
     public record TeacherOption(Long id, String firstName, String lastName, String email) {}
 
     public record OptionsResponse(
+            List<FiliereOption> filieres,
             List<ClassOption> classes,
             List<CourseOption> courses,
             List<TeacherOption> teachers) {}

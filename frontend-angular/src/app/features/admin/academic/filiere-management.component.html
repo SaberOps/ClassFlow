@@ -15,6 +15,68 @@
     </div>
   }
 
+  <section class="create-panel" aria-labelledby="assign-course-title">
+    <div class="create-copy">
+      <p class="panel-kicker">ATTRIBUTION DES COURS</p>
+      <h2 id="assign-course-title">Attribuer un cours à une classe</h2>
+      <p>Un même cours peut être attribué à plusieurs classes. Les étudiants actuels et futurs de chaque classe seront inscrits.</p>
+    </div>
+    <form class="inline-form" (ngSubmit)="assignCourse()">
+      <select
+        name="assignmentTeacher"
+        required
+        aria-label="Enseignant responsable du cours"
+        [ngModel]="assignmentTeacherId"
+        (ngModelChange)="selectAssignmentTeacher($event)"
+      >
+        <option [ngValue]="null" disabled>Choisir un enseignant</option>
+        @for (teacher of assignmentTeachers(); track teacher.id) {
+          <option [ngValue]="teacher.id">{{ teacher.firstName }} {{ teacher.lastName }}</option>
+        }
+      </select>
+      <select
+        name="assignmentCourse"
+        required
+        aria-label="Cours de l’enseignant"
+        [(ngModel)]="assignmentCourseId"
+        [disabled]="!assignmentTeacherId"
+      >
+        <option [ngValue]="null" disabled>Choisir un cours</option>
+        @for (course of coursesForTeacher(assignmentTeacherId); track course.id) {
+          <option [ngValue]="course.id">{{ course.title }} · {{ course.code }}{{ assignedClassLabel(course) }}</option>
+        }
+      </select>
+      <select
+        name="assignmentClass"
+        required
+        aria-label="Classe recevant le cours"
+        [(ngModel)]="assignmentClassId"
+      >
+        <option [ngValue]="null" disabled>Choisir une classe</option>
+        @for (academicClass of assignmentClasses(); track academicClass.id) {
+          <option [ngValue]="academicClass.id">{{ academicClass.filiereName }} · {{ academicClass.name }}</option>
+        }
+      </select>
+      <button class="btn btn-primary" type="submit" [disabled]="saving() || !assignmentTeacherId || !assignmentCourseId || !assignmentClassId">
+        Attribuer le cours
+      </button>
+    </form>
+    <div class="assigned-list">
+      <h3>Classes actuellement inscrites</h3>
+      @for (teacher of assignmentTeachers(); track teacher.id) {
+        @for (course of teacher.courses; track course.id) {
+          @for (assignedClass of course.assignedClasses; track assignedClass.id) {
+            <div class="assigned-row">
+              <span><strong>{{ course.title }}</strong><small>{{ teacher.firstName }} {{ teacher.lastName }} · {{ assignedClass.filiereName }} / {{ assignedClass.name }}</small></span>
+              <button type="button" class="link" [disabled]="saving()"
+                (click)="unassignCourse(course.id, assignedClass.id)">Retirer</button>
+            </div>
+          }
+        }
+      }
+    </div>
+  </section>
+
   <section class="create-panel" aria-labelledby="create-filiere-title">
     <div class="create-copy">
       <p class="panel-kicker">GET STARTED</p>
@@ -45,7 +107,7 @@
             <div class="filiere-heading">
               <span class="filiere-index" aria-hidden="true">{{ index + 1 }}</span>
               <div>
-                <p class="card-kicker">STUDY PROGRAM</p>
+                <p class="card-kicker">FILIÈRE</p>
                 <h3>{{ filiere.name }}</h3>
               </div>
             </div>

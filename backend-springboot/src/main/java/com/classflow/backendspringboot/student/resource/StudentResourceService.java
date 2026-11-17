@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class StudentResourceService {
@@ -30,6 +31,14 @@ public class StudentResourceService {
     }
 
     @Transactional(readOnly = true)
+    public List<ResourceDtos.ResourceItem> search(User student, String query) {
+        String normalized = query == null || query.isBlank() ? null : query.trim().toLowerCase(Locale.ROOT);
+        return resources.searchAccessibleByStudent(student.getId(), normalized).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public ResourceDtos.ResourceItem getAccessible(User student, Long resourceId) {
         Resource r = resources.findAccessibleByStudent(resourceId, student.getId())
                 .orElseThrow(() -> new NotFoundException("Resource not found"));
@@ -40,8 +49,11 @@ public class StudentResourceService {
         return new ResourceDtos.ResourceItem(
                 r.getId(),
                 r.getCourse().getId(),
+                r.getCourse().getTitle(),
+                r.getCourse().getCode(),
                 r.getTitle(),
                 r.getResourceType(),
+                r.getContentBody(),
                 r.getFileName(),
                 r.getFileUrl(),
                 r.getPublishedAt());

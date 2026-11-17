@@ -13,20 +13,11 @@ public interface TimetableSessionRepository extends JpaRepository<TimetableSessi
 
     @Query("""
         select s from TimetableSession s
-        join Enrollment e on e.course = s.course
-        where e.student.id = :studentId
-          and s.startsAt >= :from and s.startsAt < :to
-        order by s.startsAt asc
-        """)
-    List<TimetableSession> findForStudentBetween(
-            @Param("studentId") Long studentId,
-            @Param("from") Instant from,
-            @Param("to") Instant to);
-
-    @Query("""
-        select s from TimetableSession s, Student student
-        where student.user.id = :studentId
-          and s.academicClass.id = student.academicClass.id
+        where s.academicClass.id = (
+              select student.academicClass.id from Student student where student.user.id = :studentId)
+          and exists (
+              select e.id from Enrollment e
+              where e.student.id = :studentId and e.course = s.course)
           and s.startsAt >= :from and s.startsAt < :to
         order by s.startsAt asc
         """)
@@ -53,6 +44,17 @@ public interface TimetableSessionRepository extends JpaRepository<TimetableSessi
         order by s.startsAt asc
         """)
     List<TimetableSession> findBetween(
+            @Param("from") Instant from,
+            @Param("to") Instant to);
+
+    @Query("""
+        select s from TimetableSession s
+        where s.academicClass.filiere.id = :filiereId
+          and s.startsAt >= :from and s.startsAt < :to
+        order by s.startsAt asc
+        """)
+    List<TimetableSession> findForFiliereBetween(
+            @Param("filiereId") Long filiereId,
             @Param("from") Instant from,
             @Param("to") Instant to);
 

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -10,6 +10,7 @@ describe('Login', () => {
   let fixture: ComponentFixture<Login>;
   let auth: jasmine.SpyObj<AuthService>;
   let router: Router;
+  let matchMedia: jasmine.Spy;
 
   beforeEach(async () => {
     auth = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'currentUser', 'logout']);
@@ -23,6 +24,7 @@ describe('Login', () => {
     })
       .compileComponents();
 
+    matchMedia = spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
     fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -32,6 +34,47 @@ describe('Login', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('rotates to a different original quote every 12 seconds', fakeAsync(() => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    const initialQuote = component.currentQuote;
+
+    tick(12_000);
+    fixture.detectChanges();
+
+    expect(component.currentQuote).not.toBe(initialQuote);
+    expect(fixture.nativeElement.querySelector('.education-quote p').textContent)
+      .toContain(component.currentQuote);
+  }));
+
+  it('stops rotating when the component is destroyed', fakeAsync(() => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    const quoteBeforeDestroy = component.currentQuote;
+
+    fixture.destroy();
+    tick(24_000);
+
+    expect(component.currentQuote).toBe(quoteBeforeDestroy);
+  }));
+
+  it('does not rotate quotes when reduced motion is preferred', fakeAsync(() => {
+    fixture.destroy();
+    matchMedia.and.returnValue({ matches: true } as MediaQueryList);
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    const initialQuote = component.currentQuote;
+
+    tick(24_000);
+
+    expect(component.currentQuote).toBe(initialQuote);
+  }));
 
   it('navigates each role to its own page after login', () => {
     const navigate = spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));

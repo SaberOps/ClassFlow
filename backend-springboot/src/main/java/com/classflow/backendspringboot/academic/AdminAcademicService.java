@@ -6,8 +6,11 @@ import com.classflow.backendspringboot.academic.dto.CreateStudentRequest;
 import com.classflow.backendspringboot.academic.dto.FiliereResponse;
 import com.classflow.backendspringboot.academic.dto.StudentResponse;
 import com.classflow.backendspringboot.academic.dto.UpdateStudentLoginRequest;
+import com.classflow.backendspringboot.academic.enrollment.EnrollmentRepository;
 import com.classflow.backendspringboot.common.exception.ConflictException;
 import com.classflow.backendspringboot.common.exception.NotFoundException;
+import com.classflow.backendspringboot.student.course.Course;
+import com.classflow.backendspringboot.student.course.CourseRepository;
 import com.classflow.backendspringboot.user.Role;
 import com.classflow.backendspringboot.user.User;
 import com.classflow.backendspringboot.user.admin.AdminUserRepository;
@@ -30,18 +33,24 @@ public class AdminAcademicService {
     private final StudentRepository students;
     private final AdminUserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final CourseRepository courses;
+    private final EnrollmentRepository enrollments;
 
     public AdminAcademicService(
             FiliereRepository filieres,
             AcademicClassRepository classes,
             StudentRepository students,
             AdminUserRepository users,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            CourseRepository courses,
+            EnrollmentRepository enrollments) {
         this.filieres = filieres;
         this.classes = classes;
         this.students = students;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.courses = courses;
+        this.enrollments = enrollments;
     }
 
     @Transactional(readOnly = true)
@@ -112,6 +121,7 @@ public class AdminAcademicService {
                 request.lastName().trim(),
                 nationalId,
                 savedUser));
+        enrollInClassCourses(academicClass, savedUser);
         return toResponse(saved);
     }
 
@@ -147,7 +157,70 @@ public class AdminAcademicService {
 
         student.setNationalId(nationalId);
         student.setUser(savedUser);
+        enrollInClassCourses(student.getAcademicClass(), savedUser);
         return toResponse(students.save(student));
+    }
+
+    @Transactional(readOnly = true)
+    public CourseAssignmentOptions courseAssignmentOptions() {
+        List<CourseOption> coursesByTeacher = courses.findAllByActiveTrueOrderByTitleAsc().stream()
+                .map(course -> new CourseOption(
+                        course.getId(),
+                        course.getTeacher().getId(),
+                        course.getTitle(),
+                        course.getCode(),
+                        courses.findAssignedClasses(course.getId()).stream()
+                                .map(academicClass -> new AssignedClassOption(
+                                        academicClass.getId(), academicClass.getName(), academicClass.getFiliere().getName()))
+                                .toList()))
+                .toList();
+        List<TeacherOption> teacherOptions = users
+                .findAllByRoleAndEnabledTrueAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(Role.TEACHER)
+                .stream()
+                .map(teacher -> new TeacherOption(
+                        teacher.getId(),
+                        teacher.getFirstName(),
+                        teacher.getLastName(),
+                        coursesByTeacher.stream()
+                                .filter(course -> course.teacherId().equals(teacher.getId()))
+                                .toList()))
+                .toList();
+        List<AcademicClassOption> classOptions = classes.findAllByOrderByNameAsc().stream()
+                .map(academicClass -> new AcademicClassOption(
+                        academicClass.getId(),
+                        academicClass.getName(),
+                        academicClass.getFiliere().getName()))
+                .toList();
+        return new CourseAssignmentOptions(teacherOptions, classOptions);
+    }
+
+    @Transactional
+    public CourseAssignmentResponse assignCourse(CourseAssignmentRequest request) {
+        User teacher = users.findByIdAndDeletedAtIsNull(request.teacherId())
+                .filter(user -> user.getRole() == Role.TEACHER && user.isEnabled())
+                .orElseThrow(() -> new NotFoundException("Teacher not found"));
+        Course course = courses.findByIdAndTeacherIdAndActiveTrue(request.courseId(), teacher.getId())
+                .orElseThrow(() -> new NotFoundException("Course not found for this teacher"));
+        AcademicClass academicClass = findClass(request.classId());
+        course.assignTo(academicClass);
+        Course saved = courses.save(course);
+        for (Student student : students.findAllByAcademicClass_IdIn(List.of(academicClass.getId()))) {
+            User studentUser = student.getUser();
+            if (studentUser != null && studentUser.getRole() == Role.STUDENT) {
+                enroll(saved, studentUser);
+            }
+        }
+        return new CourseAssignmentResponse(
+                saved.getId(), saved.getTitle(), academicClass.getId(), academicClass.getName(),
+                teacher.getId(), teacher.getFirstName(), teacher.getLastName());
+    }
+
+    @Transactional
+    public void unassignCourse(Long courseId, Long classId) {
+        courses.findByIdAndActiveTrue(courseId)
+                .orElseThrow(() -> new NotFoundException("Course not found"));
+        findClass(classId);
+        courses.unassignClass(courseId, classId);
     }
 
     @Transactional
@@ -155,6 +228,7 @@ public class AdminAcademicService {
         Filiere filiere = findFiliere(id);
         List<Long> classIds = classes.findIdsByFiliereId(id);
         if (!classIds.isEmpty()) {
+            courses.clearAcademicClassAssignments(classIds);
             softDeleteStudentAccounts(students.findAllByAcademicClass_IdIn(classIds));
             students.deleteByAcademicClassIds(classIds);
             classes.deleteByFiliereId(id);
@@ -165,6 +239,7 @@ public class AdminAcademicService {
     @Transactional
     public void deleteClass(Long id) {
         AcademicClass academicClass = findClass(id);
+        courses.clearAcademicClassAssignments(List.of(id));
         softDeleteStudentAccounts(students.findAllByAcademicClass_IdIn(List.of(id)));
         students.deleteByAcademicClassId(id);
         classes.delete(academicClass);
@@ -186,6 +261,19 @@ public class AdminAcademicService {
     private AcademicClass findClass(Long id) {
         return classes.findById(id)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
+    }
+
+    private void enrollInClassCourses(AcademicClass academicClass, User student) {
+        if (student.getRole() != Role.STUDENT) {
+            return;
+        }
+        for (Course course : courses.findByAssignedClassIdAndActiveTrue(academicClass.getId())) {
+            enroll(course, student);
+        }
+    }
+
+    private void enroll(Course course, User student) {
+        enrollments.insertIfAbsent(course.getId(), student.getId());
     }
 
     private static StudentResponse toResponse(Student student) {
@@ -210,4 +298,15 @@ public class AdminAcademicService {
             }
         }
     }
+
+    public record CourseAssignmentOptions(List<TeacherOption> teachers, List<AcademicClassOption> classes) {}
+    public record TeacherOption(Long id, String firstName, String lastName, List<CourseOption> courses) {}
+    public record CourseOption(Long id, Long teacherId, String title, String code,
+                               List<AssignedClassOption> assignedClasses) {}
+    public record AssignedClassOption(Long id, String name, String filiereName) {}
+    public record AcademicClassOption(Long id, String name, String filiereName) {}
+    public record CourseAssignmentRequest(Long teacherId, Long courseId, Long classId) {}
+    public record CourseAssignmentResponse(
+            Long courseId, String courseTitle, Long classId, String className,
+            Long teacherId, String teacherFirstName, String teacherLastName) {}
 }

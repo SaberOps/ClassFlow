@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,9 +44,6 @@ class StudentTimetableServiceTest {
         session.setStartsAt(Instant.parse("2026-11-16T10:00:00Z"));
         session.setEndsAt(Instant.parse("2026-11-16T11:00:00Z"));
 
-        when(sessions.findForStudentBetween(5L,
-                Instant.parse("2026-11-16T00:00:00Z"),
-                Instant.parse("2026-11-23T00:00:00Z"))).thenReturn(List.of(session));
         when(sessions.findForStudentClassBetween(5L,
                 Instant.parse("2026-11-16T00:00:00Z"),
                 Instant.parse("2026-11-23T00:00:00Z"))).thenReturn(List.of(session));
@@ -59,5 +57,6 @@ class StudentTimetableServiceTest {
         verify(sessions).findForStudentClassBetween(5L,
                 Instant.parse("2026-11-16T00:00:00Z"),
                 Instant.parse("2026-11-23T00:00:00Z"));
+        verifyNoMoreInteractions(sessions);
     }
 }

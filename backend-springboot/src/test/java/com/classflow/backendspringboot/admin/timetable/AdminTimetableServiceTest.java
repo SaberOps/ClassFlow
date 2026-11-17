@@ -2,6 +2,7 @@ package com.classflow.backendspringboot.admin.timetable;
 
 import com.classflow.backendspringboot.academic.AcademicClass;
 import com.classflow.backendspringboot.academic.AcademicClassRepository;
+import com.classflow.backendspringboot.academic.FiliereRepository;
 import com.classflow.backendspringboot.common.exception.ConflictException;
 import com.classflow.backendspringboot.student.course.Course;
 import com.classflow.backendspringboot.student.course.CourseRepository;
@@ -31,13 +32,14 @@ import static org.mockito.Mockito.*;
 class AdminTimetableServiceTest {
     @Mock TimetableSessionRepository sessions;
     @Mock AcademicClassRepository classes;
+    @Mock FiliereRepository filieres;
     @Mock CourseRepository courses;
     @Mock AdminUserRepository users;
     private AdminTimetableService service;
 
     @BeforeEach
     void setUp() {
-        service = new AdminTimetableService(sessions, classes, courses, users);
+        service = new AdminTimetableService(sessions, classes, filieres, courses, users);
     }
 
     @Test
@@ -118,9 +120,8 @@ class AdminTimetableServiceTest {
 
     @Test
     void adminCanAssignAnActiveTeacherToACourseSession() {
-        User courseTeacher = teacher(8L);
         User scheduledTeacher = teacher(3L);
-        Course course = course(1L, courseTeacher);
+        Course course = course(1L, scheduledTeacher);
         AcademicClass academicClass = academicClass(2L, "Class A");
         prepareValidOptions(course, academicClass, scheduledTeacher);
         when(sessions.findOverlapping(eq(2L), eq(3L), eq("B12"), any(), any(), isNull()))
@@ -132,10 +133,44 @@ class AdminTimetableServiceTest {
         assertEquals(3L, created.teacherId());
     }
 
+    @Test
+    void rejectsTeacherOrClassNotAssignedToCourse() {
+        User courseTeacher = teacher(8L);
+        User scheduledTeacher = teacher(3L);
+        Course course = course(1L, courseTeacher);
+        AcademicClass academicClass = academicClass(2L, "Class A");
+        when(courses.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+        when(classes.findById(2L)).thenReturn(Optional.of(academicClass));
+        when(users.findByIdAndDeletedAtIsNull(3L)).thenReturn(Optional.of(scheduledTeacher));
+
+        ConflictException error = assertThrows(ConflictException.class, () -> service.create(request("B12")));
+
+        assertTrue(error.getMessage().contains("not assigned together"));
+        verify(courses, never()).existsByIdAndAcademicClasses_Id(any(), any());
+        verify(sessions, never()).save(any());
+    }
+
+    @Test
+    void rejectsUnassignedCourseClassPairForTheCorrectTeacher() {
+        User teacher = teacher(3L);
+        Course course = course(1L, teacher);
+        AcademicClass academicClass = academicClass(2L, "Class A");
+        when(courses.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+        when(classes.findById(2L)).thenReturn(Optional.of(academicClass));
+        when(users.findByIdAndDeletedAtIsNull(3L)).thenReturn(Optional.of(teacher));
+        when(courses.existsByIdAndAcademicClasses_Id(1L, 2L)).thenReturn(false);
+
+        ConflictException error = assertThrows(ConflictException.class, () -> service.create(request("B12")));
+
+        assertTrue(error.getMessage().contains("not assigned together"));
+        verify(sessions, never()).save(any());
+    }
+
     private void prepareValidOptions(Course course, AcademicClass academicClass, User teacher) {
         when(courses.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(classes.findById(2L)).thenReturn(Optional.of(academicClass));
         when(users.findByIdAndDeletedAtIsNull(3L)).thenReturn(Optional.of(teacher));
+        when(courses.existsByIdAndAcademicClasses_Id(1L, 2L)).thenReturn(true);
     }
 
     private static AdminTimetableDtos.SessionRequest request(String room) {

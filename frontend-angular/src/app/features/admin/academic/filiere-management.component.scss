@@ -14,8 +14,17 @@ h2{margin:0;font-size:1.2rem}
 .create-copy h2{margin:5px 0;font-size:1.1rem}
 .inline-form{display:flex;flex-wrap:wrap;gap:8px}
 .create-panel .inline-form{flex:1}
-.inline-form input{min-width:140px;flex:1 1 170px;padding:9px 11px;border:1px solid #d1d5db;border-radius:7px;font:inherit}
-.inline-form input:focus{outline:2px solid #5145a833;border-color:#8176cc}
+.assigned-list{grid-column:1/-1;padding-top:12px;border-top:1px solid #efedf5}
+.assigned-list h3{margin:0 0 7px;color:#625e83;font-size:.78rem}
+.assigned-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 3px;border-top:1px solid #f1eff6}
+.assigned-row>span{display:grid;min-width:0;gap:3px}
+.assigned-row strong{font-size:.8rem}
+.assigned-row small{color:#77788b;font-size:.72rem}
+.assigned-row .link{border:0;background:none;color:#645b9f;font:inherit;font-size:.75rem;font-weight:750;cursor:pointer}
+.assigned-row .link:hover{text-decoration:underline}
+.assigned-row .link:focus-visible{outline:2px solid #8176cc;outline-offset:2px}
+.inline-form input,.inline-form select{min-width:140px;flex:1 1 170px;padding:9px 11px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font:inherit}
+.inline-form input:focus,.inline-form select:focus{outline:2px solid #5145a833;border-color:#8176cc}
 .btn{padding:8px 11px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#29284c;font:inherit;font-size:.9rem;cursor:pointer}
 .btn:disabled,.text-danger:disabled{opacity:.5;cursor:not-allowed}
 .btn-primary{border-color:#5145a8;background:#5145a8;color:#fff}

@@ -32,6 +32,11 @@ export const routes: Routes = [
     redirectTo: 'student/dashboard'
   },
   {
+    path: 'admin/users/new',
+    loadComponent: () => import('./features/admin/teachers/teacher-create.component')
+      .then(m => m.TeacherCreateComponent)
+  },
+  {
     path: 'admin/users',
     loadChildren: () => import('./features/admin/users/admin-users.routes').then(m => m.ADMIN_USERS_ROUTES)
   },
@@ -50,8 +55,8 @@ export const routes: Routes = [
   },
   {
     path: 'admin/teachers/new',
-    loadComponent: () => import('./features/admin/teachers/teacher-create.component')
-      .then(m => m.TeacherCreateComponent)
+    pathMatch: 'full',
+    redirectTo: 'admin/users/new'
   },
   {
     path: 'student/change-password',

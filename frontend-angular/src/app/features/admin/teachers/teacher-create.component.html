@@ -2,12 +2,24 @@
   <div class="page-header">
     <div>
       <p class="eyebrow">Administration</p>
-      <h1>Ajouter un enseignant</h1>
+      <h1>Créer un compte utilisateur</h1>
       <p class="subtitle">
-        Créez le compte d'un nouvel enseignant.
+        Choisissez le rôle du compte. Les comptes administrateur ne sont pas créés ici.
       </p>
     </div>
   </div>
+
+  <fieldset class="form-card role-choice">
+    <legend>Type de compte</legend>
+    <label>
+      <input type="radio" name="userRole" [checked]="role() === 'STUDENT'" (change)="setRole('STUDENT')" />
+      Étudiant
+    </label>
+    <label>
+      <input type="radio" name="userRole" [checked]="role() === 'TEACHER'" (change)="setRole('TEACHER')" />
+      Enseignant
+    </label>
+  </fieldset>
 
   @if (errorMessage()) {
     <div class="alert alert-error">
@@ -37,6 +49,15 @@
     </div>
   }
 
+  @if (createdStudent(); as student) {
+    <div class="alert alert-success">
+      <h2>Compte étudiant créé</h2>
+      <p><strong>{{ student.firstName }} {{ student.lastName }}</strong> est inscrit à la classe choisie.</p>
+      <p>Le numéro national fourni sert de mot de passe initial.</p>
+    </div>
+  }
+
+  @if (role() === 'TEACHER') {
   <form [formGroup]="teacherForm" (ngSubmit)="createTeacher()">
     <div class="form-card">
       <div class="form-section">
@@ -147,4 +168,49 @@
       </div>
     </div>
   </form>
+  } @else {
+    <form [formGroup]="studentForm" (ngSubmit)="createStudent()">
+      <div class="form-card">
+        <div class="form-section">
+          <h2>Informations de l’étudiant</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="studentFirstName">Prénom</label>
+              <input id="studentFirstName" type="text" formControlName="firstName" required maxlength="100" />
+            </div>
+            <div class="form-group">
+              <label for="studentLastName">Nom</label>
+              <input id="studentLastName" type="text" formControlName="lastName" required maxlength="100" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="studentEmail">E-mail</label>
+            <input id="studentEmail" type="email" formControlName="email" required maxlength="255" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="nationalId">Numéro national</label>
+            <input id="nationalId" type="text" formControlName="nationalId" required maxlength="40" autocomplete="off" />
+            <small class="field-hint">Ce numéro sera également le mot de passe initial.</small>
+          </div>
+          <div class="form-group">
+            <label for="studentClass">Classe</label>
+            <select id="studentClass" formControlName="classId" required>
+              <option [ngValue]="null" disabled>Choisir explicitement une classe</option>
+              @for (academicClass of classes(); track academicClass.id) {
+                <option [ngValue]="academicClass.id">{{ academicClass.filiereName }} · {{ academicClass.name }}</option>
+              }
+            </select>
+            @if (!classes().length) {
+              <small class="field-error">Aucune classe disponible. Créez d’abord une classe dans le répertoire académique.</small>
+            }
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" [disabled]="saving() || !classes().length">
+            {{ saving() ? 'Création en cours...' : 'Créer le compte étudiant' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  }
 </div>

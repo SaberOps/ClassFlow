@@ -11,6 +11,21 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
 
     List<Resource> findByCourseIdOrderByPublishedAtDesc(Long courseId);
 
+    @Query("""
+        select r from Resource r
+        join Enrollment e on e.course = r.course
+        where e.student.id = :studentId
+          and (:query is null
+               or lower(r.title) like lower(concat('%', :query, '%'))
+               or lower(r.fileName) like lower(concat('%', :query, '%'))
+               or lower(r.course.title) like lower(concat('%', :query, '%'))
+               or lower(r.course.code) like lower(concat('%', :query, '%')))
+        order by r.publishedAt desc, r.id desc
+        """)
+    List<Resource> searchAccessibleByStudent(
+            @Param("studentId") Long studentId,
+            @Param("query") String query);
+
     List<Resource> findByCourseTeacherIdOrderByPublishedAtDesc(Long teacherId);
 
     Optional<Resource> findByIdAndCourseTeacherId(Long id, Long teacherId);

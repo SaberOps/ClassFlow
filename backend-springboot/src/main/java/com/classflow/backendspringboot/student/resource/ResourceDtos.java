@@ -9,8 +9,11 @@ public final class ResourceDtos {
     public record ResourceItem(
             Long id,
             Long courseId,
+            String courseTitle,
+            String courseCode,
             String title,
             ResourceType resourceType,
+            String contentBody,
             String fileName,
             String fileUrl,
             Instant publishedAt

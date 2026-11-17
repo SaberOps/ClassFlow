@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 import { AdminUserService, apiErrorMessage } from './admin-user.service';
@@ -14,7 +15,7 @@ type PendingAction = { kind: 'deactivate' | 'delete' | 'temporary-password'; use
 
 @Component({
   selector: 'app-user-list',
-  imports: [ReactiveFormsModule, ConfirmDialogComponent, UserEditDialogComponent, UserProfileDialogComponent],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmDialogComponent, UserEditDialogComponent, UserProfileDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss',
