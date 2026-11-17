@@ -4,29 +4,30 @@ import com.classflow.backendspringboot.user.User;
 import com.classflow.backendspringboot.user.UserRepository;
 import com.classflow.backendspringboot.user.auth.dto.AuthResponse;
 import com.classflow.backendspringboot.user.auth.dto.LoginRequest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.Instant;
 
-@RestController
+@Controller
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
@@ -35,26 +36,34 @@ public class AuthenticationController {
     private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
     private final UserRepository users;
     private final JdbcTemplate jdbc;
+    private final int maxLoginAttempts;
+    private final long loginLockDurationSeconds;
 
     public AuthenticationController(
             AuthenticationManager authenticationManager,
             SecurityContextRepository securityContextRepository,
             SessionAuthenticationStrategy sessionAuthenticationStrategy,
             UserRepository users,
-            JdbcTemplate jdbc) {
+            JdbcTemplate jdbc,
+            @Value("${classflow.max-login-attempts:5}") int maxLoginAttempts,
+            @Value("${classflow.login-lock-duration-seconds:900}") long loginLockDurationSeconds) {
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
         this.users = users;
         this.jdbc = jdbc;
+        this.maxLoginAttempts = maxLoginAttempts;
+        this.loginLockDurationSeconds = loginLockDurationSeconds;
     }
 
     @GetMapping("/csrf")
-    public CsrfToken csrfToken(CsrfToken csrfToken) {
-        return csrfToken;
+    @ResponseBody
+    public Object csrfToken() {
+        return null;
     }
 
     @PostMapping("/login")
+    @ResponseBody
     public AuthResponse login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest,
@@ -70,12 +79,10 @@ public class AuthenticationController {
         }
 
         User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(authentication.getName()).orElse(null);
-        if (user != null && (user.getFailedLoginAttempts() != 0 || user.getLockedUntil() != null)) {
+        if (user != null) {
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
             users.save(user);
-        }
-        if (user != null) {
             jdbc.update("INSERT INTO login_attempts(user_id,attempted_email,succeeded) VALUES (?,?,TRUE)",
                     user.getId(), user.getEmail());
         }
@@ -91,6 +98,7 @@ public class AuthenticationController {
     }
 
     @GetMapping("/me")
+    @ResponseBody
     public AuthResponse currentUser(Authentication authentication) {
         return toResponse(authentication);
     }
@@ -104,20 +112,26 @@ public class AuthenticationController {
     @Transactional
     void recordFailure(String email) {
         User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(email.trim()).orElse(null);
-        if (user != null) {
-            Instant now = Instant.now();
-            if (!user.isLoginLocked(now)) {
-                if (user.getLockedUntil() != null && !user.getLockedUntil().isAfter(now)) {
-                user.setFailedLoginAttempts(0);
-                user.setLockedUntil(null);
-                }
-                int failed = user.getFailedLoginAttempts() + 1;
-                user.setFailedLoginAttempts(failed);
-                if (failed >= 5) user.setLockedUntil(now.plusSeconds(15 * 60));
-                users.save(user);
-            }
+        if (user == null) {
+            jdbc.update("INSERT INTO login_attempts(user_id,attempted_email,succeeded) VALUES (?,?,FALSE)",
+                    null, email.trim());
+            return;
         }
+
+        Instant now = Instant.now();
+        if (user.isLoginLocked(now)) {
+            return;
+        }
+
+        int failed = user.getFailedLoginAttempts() + 1;
+        user.setFailedLoginAttempts(failed);
+
+        if (failed >= maxLoginAttempts) {
+            user.setLockedUntil(now.plusSeconds(loginLockDurationSeconds));
+        }
+
+        users.save(user);
         jdbc.update("INSERT INTO login_attempts(user_id,attempted_email,succeeded) VALUES (?,?,FALSE)",
-                user == null ? null : user.getId(), email.trim());
+                user.getId(), email.trim());
     }
 }
