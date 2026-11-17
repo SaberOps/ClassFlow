@@ -2,7 +2,9 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { AdminUser, PageResponse, UpdateUserPayload, UserFilters } from './user.model';
+import {
+  AdminUser, AdminUserProfile, PageResponse, TemporaryPasswordResponse, UpdateUserPayload, UserFilters
+} from './user.model';
 
 /** Calls the US11 endpoints. Relative URLs: the dev proxy forwards /api to Spring Boot. */
 @Injectable({ providedIn: 'root' })
@@ -20,6 +22,14 @@ export class AdminUserService {
 
   update(id: number, payload: UpdateUserPayload): Observable<AdminUser> {
     return this.http.put<AdminUser>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  profile(id: number): Observable<AdminUserProfile> {
+    return this.http.get<AdminUserProfile>(`${this.baseUrl}/${id}/profile`);
+  }
+
+  resetTemporaryPassword(id: number): Observable<TemporaryPasswordResponse> {
+    return this.http.post<TemporaryPasswordResponse>(`${this.baseUrl}/${id}/temporary-password`, {});
   }
 
   setEnabled(id: number, enabled: boolean): Observable<AdminUser> {

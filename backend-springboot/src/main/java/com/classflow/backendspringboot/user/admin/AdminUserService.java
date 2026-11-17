@@ -2,19 +2,25 @@ package com.classflow.backendspringboot.user.admin;
 
 import com.classflow.backendspringboot.common.exception.ConflictException;
 import com.classflow.backendspringboot.common.exception.NotFoundException;
+import com.classflow.backendspringboot.student.portal.StudentPortalService;
+import com.classflow.backendspringboot.teacher.portal.TeacherPortalService;
 import com.classflow.backendspringboot.user.Role;
 import com.classflow.backendspringboot.user.User;
+import com.classflow.backendspringboot.user.admin.dto.AdminUserProfileResponse;
 import com.classflow.backendspringboot.user.admin.dto.PageResponse;
+import com.classflow.backendspringboot.user.admin.dto.TemporaryPasswordResponse;
 import com.classflow.backendspringboot.user.admin.dto.UpdateUserRequest;
 import com.classflow.backendspringboot.user.admin.dto.UserResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -32,12 +38,21 @@ public class AdminUserService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final AdminUserRepository users;
+    private final PasswordEncoder passwordEncoder;
+    private final StudentPortalService studentPortal;
+    private final TeacherPortalService teacherPortal;
     private final String institutionalDomain;
 
     public AdminUserService(
             AdminUserRepository users,
-            @Value("${classflow.institutional-email-domain:}") String institutionalDomain) {
+            @Value("${classflow.institutional-email-domain:}") String institutionalDomain,
+            PasswordEncoder passwordEncoder,
+            StudentPortalService studentPortal,
+            TeacherPortalService teacherPortal) {
         this.users = users;
+        this.passwordEncoder = passwordEncoder;
+        this.studentPortal = studentPortal;
+        this.teacherPortal = teacherPortal;
         this.institutionalDomain = institutionalDomain == null ? "" : institutionalDomain.trim().toLowerCase(Locale.ROOT);
     }
 
@@ -62,6 +77,30 @@ public class AdminUserService {
     @Transactional(readOnly = true)
     public UserResponse get(Long id) {
         return toResponse(findActive(id));
+    }
+
+    @Transactional(readOnly = true)
+    public AdminUserProfileResponse getProfile(Long id) {
+        User user = findActive(id);
+        if (user.getRole() == Role.STUDENT) {
+            StudentPortalService.ProfileDto profile = studentPortal.profile(user);
+            return new AdminUserProfileResponse(
+                    user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(),
+                    user.isEnabled(), user.getDeactivatedAt(), profile.phone(), profile.photoUrl(),
+                    profile.studentNumber(), profile.departmentName(), profile.className(),
+                    List.of(), profile.courseTitles(), user.isMustChangePassword());
+        }
+        if (user.getRole() == Role.TEACHER) {
+            TeacherPortalService.ProfileDto profile = teacherPortal.profile(user);
+            return new AdminUserProfileResponse(
+                    user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(),
+                    user.isEnabled(), user.getDeactivatedAt(), profile.phone(), profile.photoUrl(),
+                    null, null, null, profile.subjects(), List.of(), user.isMustChangePassword());
+        }
+        return new AdminUserProfileResponse(
+                user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(),
+                user.isEnabled(), user.getDeactivatedAt(), user.getPhone(), user.getPhotoUrl(),
+                null, null, null, List.of(), List.of(), user.isMustChangePassword());
     }
 
     @Transactional
@@ -91,6 +130,23 @@ public class AdminUserService {
         user.setEnabled(enabled);
         user.setDeactivatedAt(enabled ? null : Instant.now());
         return toResponse(user);
+    }
+
+    @Transactional
+    public TemporaryPasswordResponse resetTemporaryPassword(Long id) {
+        User user = findActive(id);
+        if (user.getRole() == Role.ADMIN) {
+            throw new ConflictException("Temporary password reset is only available for student and teacher accounts");
+        }
+
+        String temporaryPassword = TemporaryPasswordGenerator.generate();
+        user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+        user.setMustChangePassword(true);
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        users.save(user);
+
+        return new TemporaryPasswordResponse(user.getId(), user.getEmail(), temporaryPassword, true);
     }
 
     @Transactional
