@@ -35,7 +35,13 @@ export class Login {
     this.auth.login(this.email, this.password).subscribe({
       next: (user) => {
         this.password = '';
-        void this.router.navigateByUrl(homePathForRole(user.role));
+        const passwordChangePath = user.role === 'STUDENT'
+          ? '/student/change-password'
+          : '/teacher/change-password';
+        void this.router.navigateByUrl(
+          user.mustChangePassword && user.role !== 'ADMIN'
+            ? passwordChangePath
+            : homePathForRole(user.role));
       },
       error: (error: unknown) => {
         this.isSubmitting = false;

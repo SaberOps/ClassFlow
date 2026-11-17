@@ -1,6 +1,8 @@
 package com.classflow.backendspringboot.user.auth;
 
 import com.classflow.backendspringboot.user.Role;
+import com.classflow.backendspringboot.user.User;
+import com.classflow.backendspringboot.user.UserRepository;
 import com.classflow.backendspringboot.user.auth.dto.AuthResponse;
 import com.classflow.backendspringboot.user.auth.dto.LoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -41,12 +44,18 @@ class AuthenticationControllerTest {
     @Mock
     SessionAuthenticationStrategy sessionAuthenticationStrategy;
 
+    @Mock
+    UserRepository users;
+
+    @Mock
+    JdbcTemplate jdbc;
+
     private AuthenticationController controller;
 
     @BeforeEach
     void setUp() {
         controller = new AuthenticationController(
-                authenticationManager, securityContextRepository, sessionAuthenticationStrategy);
+                authenticationManager, securityContextRepository, sessionAuthenticationStrategy, users, jdbc);
     }
 
     @AfterEach
@@ -60,6 +69,11 @@ class AuthenticationControllerTest {
                 "admin@classflow.test",
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        User account = new User();
+        account.setEmail("admin@classflow.test");
+        account.setRole(Role.ADMIN);
+        when(users.findByEmailIgnoreCaseAndDeletedAtIsNull("admin@classflow.test"))
+                .thenReturn(java.util.Optional.of(account));
         when(authenticationManager.authenticate(any())).thenReturn(authentication);
         HttpServletRequest request = new MockHttpServletRequest();
         HttpServletResponse response = new MockHttpServletResponse();
@@ -67,9 +81,24 @@ class AuthenticationControllerTest {
         AuthResponse result = controller.login(
                 new LoginRequest("admin@classflow.test", "password"), request, response);
 
-        assertEquals(new AuthResponse("admin@classflow.test", Role.ADMIN), result);
+        assertEquals(new AuthResponse("admin@classflow.test", Role.ADMIN, false), result);
         verify(sessionAuthenticationStrategy).onAuthentication(same(authentication), same(request), same(response));
         verify(securityContextRepository).saveContext(any(SecurityContext.class), same(request), same(response));
         assertEquals(authentication, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void fifthFailedAttemptLocksAccountForFifteenMinutes() {
+        User account = new User();
+        account.setEmail("teacher@classflow.test");
+        account.setFailedLoginAttempts(4);
+        when(users.findByEmailIgnoreCaseAndDeletedAtIsNull("teacher@classflow.test"))
+                .thenReturn(java.util.Optional.of(account));
+
+        controller.recordFailure("teacher@classflow.test");
+
+        assertEquals(5, account.getFailedLoginAttempts());
+        assertEquals(true, account.isLoginLocked(java.time.Instant.now()));
+        verify(users).save(account);
     }
 }

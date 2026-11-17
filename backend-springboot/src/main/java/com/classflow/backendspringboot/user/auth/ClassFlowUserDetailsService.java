@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 @Service
 public class ClassFlowUserDetailsService implements UserDetailsService {
 
@@ -27,6 +29,7 @@ public class ClassFlowUserDetailsService implements UserDetailsService {
                 .password(account.getPasswordHash())
                 .authorities("ROLE_" + account.getRole().name())
                 .disabled(!account.isEnabled() || account.getDeactivatedAt() != null)
+                .accountLocked(account.isLoginLocked(Instant.now()))
                 .build();
     }
 }

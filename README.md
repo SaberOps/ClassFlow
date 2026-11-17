@@ -35,7 +35,17 @@ cd backend-springboot
 .\mvnw.cmd spring-boot:run
 ```
 
-Le backend écoute sur `http://localhost:8080`. Flyway applique automatiquement les migrations du dossier `backend-springboot/src/main/resources/db/migration`.
+Le backend écoute sur `http://localhost:8081`. Flyway applique automatiquement les migrations du dossier `backend-springboot/src/main/resources/db/migration`.
+
+Avec le profil local (profil par défaut), trois comptes de démonstration sont créés au démarrage s'ils n'existent pas déjà :
+
+| Rôle | Adresse e-mail | Mot de passe |
+|---|---|---|
+| Administrateur | `admin@classflow.test` | `Admin123!` |
+| Étudiant | `student@classflow.test` | `Student123!` |
+| Enseignant | `teacher@classflow.test` | `Teacher123!` |
+
+Ces comptes sont réservés au développement local. Ils ne sont jamais créés hors du profil `local` et leurs mots de passe sont stockés sous forme hachée.
 
 ## Réinitialisation du mot de passe (US05)
 
@@ -53,13 +63,14 @@ npm ci
 npm start
 ```
 
-Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8080`. L'application ouvre la page de connexion ; le lien « Mot de passe oublié ? » mène au parcours US05.
+Ouvrir `http://localhost:4200`. Le proxy Angular transmet les appels `/api` vers `http://localhost:8081`. L'application ouvre la page de connexion ; le lien « Mot de passe oublié ? » mène au parcours US05.
 
 ## Architecture partagée
 
 - `user.User` et `user.Role` sont les modèles communs des comptes. Les modules fonctionnels doivent les réutiliser.
 - L'authentification et les règles d'autorisation doivent rester centralisées.
 - Les endpoints `/api/admin/users` existants restent protégés par le rôle `ADMIN`.
+- Dans **Comptes**, l'administration peut charger la fiche détaillée d'un étudiant ou d'un enseignant et générer un mot de passe temporaire. Celui-ci n'est renvoyé qu'une fois, son empreinte seule est stockée et l'utilisateur doit le remplacer à sa prochaine connexion. Cette action n'est pas disponible pour les comptes administrateurs.
 - Les migrations SQL sont centralisées dans `backend-springboot/src/main/resources/db/migration` et suivent une numérotation globale.
 - Ne jamais modifier une migration Flyway déjà appliquée sur une base partagée. Ajouter une nouvelle migration pour toute évolution.
 
@@ -80,6 +91,16 @@ cd frontend-angular
 npm run build
 ```
 
-## Périmètre actuel
+## Espace enseignant
 
-Cette version contient la page de connexion ClassFlow et le parcours US05 de réinitialisation de mot de passe oublié. La connexion n'est pas encore reliée à un service d'authentification. Les fonctionnalités Filières/classes/affectation, cours, emplois du temps, présences, devoirs, documents, notifications et messagerie ne sont pas encore implémentées dans cette archive. Elles devront être ajoutées progressivement dans les modules communs du même projet.
+L'espace enseignant est accessible après connexion à `/teacher/dashboard`. Il regroupe les cours et ressources, la création et la correction des devoirs, les présences par séance, l'emploi du temps hebdomadaire, les notifications et le profil. Les API utilisent le rôle `TEACHER` et vérifient que le cours ou la séance appartient à l'enseignant connecté.
+
+Les nouveaux fichiers de cours et les pièces jointes de devoirs sont stockés dans `uploaded_files` via `/api/files`. Les formats acceptés sont PDF, DOCX, PPTX, JPG et PNG, jusqu'à 10 MiB. Le changement de mot de passe temporaire est imposé avant l'accès aux autres API; cinq échecs de connexion verrouillent le compte pendant 15 minutes. Les sessions expirent après 30 minutes d'inactivité. Les photos de profil sont fournies par URL HTTP(S).
+
+La migration `V9__complete_story_workflows.sql` est déjà appliquée dans les bases de développement existantes et doit rester identique. Flyway valide les migrations au démarrage; aucune migration supplémentaire n'est requise pour l'espace enseignant livré ici. Si la base est à une version antérieure, démarre le backend et laisse Flyway appliquer les migrations disponibles avant de démarrer Angular.
+
+## Limites connues
+
+- Les notifications enseignant sont affichées et gérées depuis le centre; les événements notifiant automatiquement chaque enseignant dépendent de la génération côté métier qui reste à compléter.
+- Les fichiers de pièce jointe sont téléversés dans le stockage BLOB existant; la photo de profil utilise une URL (pas un téléversement d'image).
+- L'espace étudiant et l'administration ne sont pas redessinés par cette livraison.

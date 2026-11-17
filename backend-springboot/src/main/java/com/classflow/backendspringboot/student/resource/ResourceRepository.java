@@ -11,6 +11,10 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
 
     List<Resource> findByCourseIdOrderByPublishedAtDesc(Long courseId);
 
+    List<Resource> findByCourseTeacherIdOrderByPublishedAtDesc(Long teacherId);
+
+    Optional<Resource> findByIdAndCourseTeacherId(Long id, Long teacherId);
+
     @Query("""
         select r from Resource r
         join Enrollment e on e.course = r.course

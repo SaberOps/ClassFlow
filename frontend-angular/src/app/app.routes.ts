@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { studentGuard } from './student.guard';
+import { teacherGuard } from './core/guards/teacher.guard';
 import { StudentLayoutComponent } from './layouts/student-layout/student-layout.component';
 
 export const routes: Routes = [
@@ -22,8 +23,8 @@ export const routes: Routes = [
   },
   {
     path: 'teacher/home',
-    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
-    data: { role: 'TEACHER' }
+    pathMatch: 'full',
+    redirectTo: 'teacher/dashboard'
   },
   {
     path: 'student/home',
@@ -47,8 +48,34 @@ export const routes: Routes = [
       .then(m => m.TeacherCreateComponent)
   },
   {
+    path: 'student/change-password',
+    canActivate: [studentGuard],
+    loadComponent: () =>
+      import('./features/student/profile/student-change-password.component')
+        .then(m => m.StudentChangePasswordComponent)
+  },
+  {
+    path: 'teacher',
+    canActivate: [teacherGuard],
+    canActivateChild: [teacherGuard],
+    loadComponent: () => import('./layouts/teacher-layout/teacher-layout.component')
+      .then(m => m.TeacherLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard', loadComponent: () => import('./features/teacher/dashboard/teacher-dashboard.component').then(m => m.TeacherDashboardComponent) },
+      { path: 'courses', loadComponent: () => import('./features/teacher/courses/teacher-courses.component').then(m => m.TeacherCoursesComponent) },
+      { path: 'assignments', loadComponent: () => import('./features/teacher/assignments/teacher-assignments.component').then(m => m.TeacherAssignmentsComponent) },
+      { path: 'timetable', loadComponent: () => import('./features/teacher/timetable/teacher-timetable.component').then(m => m.TeacherTimetableComponent) },
+      { path: 'attendance', loadComponent: () => import('./features/teacher/attendance/teacher-attendance.component').then(m => m.TeacherAttendanceComponent) },
+      { path: 'notifications', loadComponent: () => import('./features/teacher/notifications/teacher-notifications.component').then(m => m.TeacherNotificationsComponent) },
+      { path: 'profile', loadComponent: () => import('./features/teacher/profile/teacher-profile.component').then(m => m.TeacherProfileComponent) },
+      { path: 'change-password', loadComponent: () => import('./features/teacher/profile/teacher-change-password.component').then(m => m.TeacherChangePasswordComponent) }
+    ]
+  },
+  {
     path: 'student',
     canActivate: [studentGuard],
+    canActivateChild: [studentGuard],
     component: StudentLayoutComponent,
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },

@@ -37,7 +37,7 @@ describe('Login', () => {
     const navigate = spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));
     const paths = [
       { role: 'ADMIN' as const, path: '/admin/home' },
-      { role: 'TEACHER' as const, path: '/teacher/home' },
+      { role: 'TEACHER' as const, path: '/teacher/dashboard' },
       { role: 'STUDENT' as const, path: '/student/dashboard' },
     ];
 
@@ -47,5 +47,27 @@ describe('Login', () => {
       component.handleSubmit(new SubmitEvent('submit'));
       expect(navigate).toHaveBeenCalledWith(path);
     }
+  });
+
+  it('forces a teacher to change a temporary password before opening the workspace', () => {
+    const navigate = spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));
+    auth.login.and.returnValue(of({
+      email: 'teacher@classflow.test', role: 'TEACHER', mustChangePassword: true
+    }));
+
+    component.handleSubmit(new SubmitEvent('submit'));
+
+    expect(navigate).toHaveBeenCalledWith('/teacher/change-password');
+  });
+
+  it('forces a student to change a temporary password before opening the workspace', () => {
+    const navigate = spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));
+    auth.login.and.returnValue(of({
+      email: 'student@classflow.test', role: 'STUDENT', mustChangePassword: true
+    }));
+
+    component.handleSubmit(new SubmitEvent('submit'));
+
+    expect(navigate).toHaveBeenCalledWith('/student/change-password');
   });
 });

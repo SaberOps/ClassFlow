@@ -11,7 +11,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,13 +18,9 @@ import java.util.stream.Collectors;
 @Service
 public class AdminTeacherService {
 
-    private static final String PASSWORD_CHARS =
-            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-
     private final AdminUserRepository users;
     private final BCryptPasswordEncoder passwordEncoder =
             new BCryptPasswordEncoder();
-    private final SecureRandom random = new SecureRandom();
     private final String institutionalDomain;
 
     public AdminTeacherService(
@@ -62,7 +57,7 @@ public class AdminTeacherService {
             throw new ConflictException("At least one valid subject is required");
         }
 
-        String temporaryPassword = generateTemporaryPassword();
+        String temporaryPassword = TemporaryPasswordGenerator.generate();
 
         User teacher = new User();
         teacher.setFirstName(request.firstName().trim());
@@ -88,15 +83,4 @@ public class AdminTeacherService {
         );
     }
 
-    private String generateTemporaryPassword() {
-        StringBuilder password = new StringBuilder();
-
-        for (int i = 0; i < 16; i++) {
-            password.append(
-                    PASSWORD_CHARS.charAt(random.nextInt(PASSWORD_CHARS.length()))
-            );
-        }
-
-        return password.toString();
-    }
 }

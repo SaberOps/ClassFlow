@@ -54,6 +54,18 @@ public class User {
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword = false;
 
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
+
+    @Column(length = 30)
+    private String phone;
+
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
         name = "teacher_subjects",
@@ -113,6 +125,28 @@ public class User {
 
     public void setMustChangePassword(boolean mustChangePassword) {
         this.mustChangePassword = mustChangePassword;
+    }
+
+    public int getFailedLoginAttempts() { return failedLoginAttempts; }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public Instant getLockedUntil() { return lockedUntil; }
+
+    public void setLockedUntil(Instant lockedUntil) { this.lockedUntil = lockedUntil; }
+
+    public String getPhone() { return phone; }
+
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getPhotoUrl() { return photoUrl; }
+
+    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+
+    public boolean isLoginLocked(Instant now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
     }
 
     public Set<String> getSubjects() {

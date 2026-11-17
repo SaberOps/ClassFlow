@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface AssignmentAttachmentRepository extends JpaRepository<AssignmentAttachment, Long> {
     List<AssignmentAttachment> findByAssignmentId(Long assignmentId);
+    void deleteByAssignmentId(Long assignmentId);
 }

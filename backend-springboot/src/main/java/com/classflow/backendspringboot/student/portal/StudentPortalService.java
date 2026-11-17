@@ -61,8 +61,12 @@ public class StudentPortalService {
         if (!passwords.matches(request.currentPassword(), managed.getPasswordHash())) {
             throw new ConflictException("Current password is incorrect");
         }
-        if (request.newPassword() == null || request.newPassword().length() < 10) {
-            throw new ConflictException("New password must contain at least 10 characters");
+        if (request.newPassword() == null || request.newPassword().length() < 10
+                || request.newPassword().length() > 72
+                || request.newPassword().chars().noneMatch(Character::isUpperCase)
+                || request.newPassword().chars().noneMatch(Character::isLowerCase)
+                || request.newPassword().chars().noneMatch(Character::isDigit)) {
+            throw new ConflictException("Password must be 10–72 characters and include upper, lower, and numeric characters");
         }
         managed.setPasswordHash(passwords.encode(request.newPassword()));
         managed.setMustChangePassword(false);

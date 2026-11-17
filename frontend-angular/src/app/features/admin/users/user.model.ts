@@ -10,6 +10,31 @@ export interface AdminUser {
   deactivatedAt: string | null;
 }
 
+export interface AdminUserProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: Role;
+  enabled: boolean;
+  deactivatedAt: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+  studentNumber: string | null;
+  departmentName: string | null;
+  className: string | null;
+  subjects: string[];
+  courses: string[];
+  mustChangePassword: boolean;
+}
+
+export interface TemporaryPasswordResponse {
+  userId: number;
+  email: string;
+  temporaryPassword: string;
+  mustChangePassword: boolean;
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;

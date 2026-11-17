@@ -11,10 +11,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,5 +50,24 @@ class AuthenticationConfigTest {
         assertThrows(BadCredentialsException.class, () -> authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(
                         "student@classflow.test", "incorrect-password")));
+    }
+
+    @Test
+    void authenticationManagerRejectsAccountDuringLockoutWindow() {
+        PasswordEncoder passwordEncoder = new AuthenticationConfig().passwordEncoder();
+        User account = new User();
+        account.setEmail("teacher@classflow.test");
+        account.setPasswordHash(passwordEncoder.encode("correct-password"));
+        account.setRole(Role.TEACHER);
+        account.setEnabled(true);
+        account.setLockedUntil(Instant.now().plusSeconds(60));
+        when(users.findByEmailIgnoreCaseAndDeletedAtIsNull("teacher@classflow.test"))
+                .thenReturn(Optional.of(account));
+        AuthenticationManager authenticationManager = new AuthenticationConfig().authenticationManager(
+                new ClassFlowUserDetailsService(users), passwordEncoder);
+
+        assertThrows(LockedException.class, () -> authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(
+                        "teacher@classflow.test", "correct-password")));
     }
 }

@@ -30,8 +30,14 @@ public class Resource {
     @Column(name = "file_url", nullable = false, length = 500)
     private String fileUrl;
 
+    @Column(name = "content_text", columnDefinition = "TEXT")
+    private String contentBody;
+
     @Column(name = "published_at", nullable = false)
     private Instant publishedAt = Instant.now();
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     public Long getId() { return id; }
     public Course getCourse() { return course; }
@@ -44,5 +50,9 @@ public class Resource {
     public void setFileName(String fileName) { this.fileName = fileName; }
     public String getFileUrl() { return fileUrl; }
     public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
+    public String getContentBody() { return contentBody; }
+    public void setContentBody(String contentBody) { this.contentBody = contentBody; }
     public Instant getPublishedAt() { return publishedAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

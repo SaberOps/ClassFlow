@@ -156,11 +156,13 @@ import { StudentApiService } from '../../core/services/student-api.service';
       .layout { display: block; }
       aside { position: static; width: auto; height: auto; overflow: visible; padding: 12px 14px 10px; }
       .brand { padding: 0 4px 11px; }
-      .nav-label, .bottom { display: none; }
+      .nav-label { display: none; }
       nav { display: flex; gap: 5px; overflow-x: auto; padding: 0 0 3px; scrollbar-width: thin; }
       nav a { min-height: 34px; flex: 0 0 auto; padding: 8px 10px; font-size: 10px; }
       nav a span { display: none; }
       nav a.on { box-shadow: inset 0 -2px #b2aaff; }
+      .bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 6px; padding-top: 8px; }
+      .bottom > a, .bottom button { justify-content: center; min-height: 34px; padding: 8px 6px; font-size: 10px; }
       main { padding: 17px 14px; }
       .mobile-brand { display: flex; align-items: center; gap: 9px; margin: 0 0 15px 3px; color: #393575; font-size: 13px; font-weight: 800; }
       .mobile-brand small { color: #7168bd; font-size: 7px; }

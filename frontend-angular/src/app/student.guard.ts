@@ -1,13 +1,23 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
-import { AuthService } from './auth/auth.service';
+import { AuthService, homePathForRole } from './auth/auth.service';
 
-export const studentGuard: CanActivateFn = () => {
+export const studentGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return auth.currentUser().pipe(
-    map(user => (user.role === 'STUDENT' ? true : router.createUrlTree(['/login']))),
+    map(user => {
+      if (user.role !== 'STUDENT') return router.createUrlTree([homePathForRole(user.role)]);
+      const passwordRoute = state.url.startsWith('/student/change-password');
+      if (user.mustChangePassword && !passwordRoute) {
+        return router.createUrlTree(['/student/change-password']);
+      }
+      if (!user.mustChangePassword && passwordRoute) {
+        return router.createUrlTree(['/student/dashboard']);
+      }
+      return true;
+    }),
     catchError(() => of(router.createUrlTree(['/login'])))
   );
 };

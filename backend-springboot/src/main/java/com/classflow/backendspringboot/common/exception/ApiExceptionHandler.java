@@ -30,4 +30,9 @@ public class ApiExceptionHandler {
     public ProblemDetail handleAuthentication(AuthenticationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleInvalidRequest(IllegalArgumentException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 }

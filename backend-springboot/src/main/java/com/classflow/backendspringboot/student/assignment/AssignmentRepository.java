@@ -5,10 +5,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
     List<Assignment> findByCourseIdOrderByDueAtAsc(Long courseId);
+
+    List<Assignment> findByCourseTeacherIdOrderByDueAtAsc(Long teacherId);
+
+    Optional<Assignment> findByIdAndCourseTeacherId(Long id, Long teacherId);
 
     @Query("""
         select a from Assignment a

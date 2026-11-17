@@ -1,6 +1,8 @@
 package com.classflow.backendspringboot.config;
 
 import com.classflow.backendspringboot.user.auth.ClassFlowUserDetailsService;
+import com.classflow.backendspringboot.user.UserRepository;
+import com.classflow.backendspringboot.user.auth.MustChangePasswordFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +22,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -57,11 +60,13 @@ public class AuthenticationConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             AuthenticationManager authenticationManager,
-            SecurityContextRepository securityContextRepository) throws Exception {
+            SecurityContextRepository securityContextRepository,
+            UserRepository users) throws Exception {
         http
                 .cors(cors -> {})
                 .authenticationManager(authenticationManager)
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
+                .addFilterAfter(new MustChangePasswordFilter(users), SecurityContextHolderFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()

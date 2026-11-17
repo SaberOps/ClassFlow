@@ -7,10 +7,12 @@ export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 export interface AuthResponse {
   email: string;
   role: UserRole;
+  mustChangePassword?: boolean;
 }
 
 export function homePathForRole(role: UserRole): string {
-  return role === 'STUDENT' ? '/student/dashboard' : `/${role.toLowerCase()}/home`;
+  if (role === 'STUDENT') return '/student/dashboard';
+  return role === 'TEACHER' ? '/teacher/dashboard' : '/admin/home';
 }
 
 @Injectable({ providedIn: 'root' })
