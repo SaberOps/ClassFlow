@@ -11,6 +11,7 @@ public final class TimetableDtos {
             Long courseId,
             String courseTitle,
             String teacherName,
+            String className,
             Instant startsAt,
             Instant endsAt,
             String room,

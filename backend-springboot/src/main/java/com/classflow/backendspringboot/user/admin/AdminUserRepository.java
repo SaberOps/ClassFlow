@@ -5,6 +5,7 @@ import com.classflow.backendspringboot.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,6 +17,8 @@ public interface AdminUserRepository extends JpaRepository<User, Long>, JpaSpeci
     Optional<User> findByIdAndDeletedAtIsNull(Long id);
 
     Optional<User> findByEmailIgnoreCaseAndDeletedAtIsNull(String email);
+
+    List<User> findAllByRoleAndEnabledTrueAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(Role role);
 
     boolean existsByEmailIgnoreCaseAndDeletedAtIsNullAndIdNot(String email, Long id);
 

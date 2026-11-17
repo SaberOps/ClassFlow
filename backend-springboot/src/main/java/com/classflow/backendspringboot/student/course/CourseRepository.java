@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Optional<Course> findByIdAndActiveTrue(Long id);
+    List<Course> findAllByActiveTrueOrderByTitleAsc();
     List<Course> findByTeacherIdAndActiveTrueOrderByTitleAsc(Long teacherId);
     Optional<Course> findByIdAndTeacherIdAndActiveTrue(Long id, Long teacherId);
 }

@@ -23,7 +23,7 @@ export interface TeacherAssignmentDetail {
 }
 export interface TeacherSession {
   id: number; courseId: number; courseTitle: string; teacherName: string; startsAt: string;
-  endsAt: string; room?: string; meetingUrl?: string; cancelled: boolean; lastMinuteChange: boolean;
+  endsAt: string; room?: string; className?: string; meetingUrl?: string; cancelled: boolean; lastMinuteChange: boolean;
   changeNote?: string;
 }
 export interface TeacherRosterEntry {

@@ -1,6 +1,7 @@
 package com.classflow.backendspringboot.teacher.timetable;
 
 import com.classflow.backendspringboot.student.timetable.TimetableDtos;
+import com.classflow.backendspringboot.student.timetable.TimetableSession;
 import com.classflow.backendspringboot.student.timetable.TimetableSessionRepository;
 import com.classflow.backendspringboot.user.User;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,8 @@ public class TeacherTimetableService {
                         s.getId(),
                         s.getCourse().getId(),
                         s.getCourse().getTitle(),
-                        teacher.getFirstName() + " " + teacher.getLastName(),
+                        teacherName(s, teacher),
+                        s.getAcademicClass() == null ? null : s.getAcademicClass().getName(),
                         s.getStartsAt(),
                         s.getEndsAt(),
                         s.getRoom(),
@@ -38,5 +40,11 @@ public class TeacherTimetableService {
                         s.getChangeNote()))
                 .toList();
         return new TimetableDtos.WeekResponse(items);
+    }
+
+    private static String teacherName(
+            TimetableSession session, User fallback) {
+        User assignedTeacher = session.getTeacher() == null ? fallback : session.getTeacher();
+        return assignedTeacher.getFirstName() + " " + assignedTeacher.getLastName();
     }
 }

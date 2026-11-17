@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentTimetableService {
@@ -21,12 +24,23 @@ public class StudentTimetableService {
     public TimetableDtos.WeekResponse week(User student, LocalDate start) {
         Instant from = start.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant to = start.plusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC);
-        var items = sessions.findForStudentBetween(student.getId(), from, to).stream()
+        var studentSessions = sessions.findForStudentBetween(student.getId(), from, to);
+        var classSessions = sessions.findForStudentClassBetween(student.getId(), from, to);
+        var items = java.util.stream.Stream.concat(studentSessions.stream(), classSessions.stream())
+                .collect(Collectors.toMap(
+                        TimetableSession::getId,
+                        session -> session,
+                        (first, ignored) -> first,
+                        LinkedHashMap::new))
+                .values()
+                .stream()
+                .sorted(Comparator.comparing(TimetableSession::getStartsAt))
                 .map(s -> new TimetableDtos.SessionItem(
                         s.getId(),
                         s.getCourse().getId(),
                         s.getCourse().getTitle(),
-                        s.getCourse().getTeacher().getFirstName() + " " + s.getCourse().getTeacher().getLastName(),
+                        teacherName(s),
+                        s.getAcademicClass() == null ? null : s.getAcademicClass().getName(),
                         s.getStartsAt(),
                         s.getEndsAt(),
                         s.getRoom(),
@@ -36,5 +50,12 @@ public class StudentTimetableService {
                         s.getChangeNote()))
                 .toList();
         return new TimetableDtos.WeekResponse(items);
+    }
+
+    private static String teacherName(TimetableSession session) {
+        var teacher = session.getTeacher() == null
+                ? session.getCourse().getTeacher()
+                : session.getTeacher();
+        return teacher.getFirstName() + " " + teacher.getLastName();
     }
 }

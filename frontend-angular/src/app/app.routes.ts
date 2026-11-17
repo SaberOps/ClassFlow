@@ -43,6 +43,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'admin/timetable',
+    loadComponent: () =>
+      import('./features/admin/timetable/admin-timetable.component')
+        .then(m => m.AdminTimetableComponent)
+  },
+  {
     path: 'admin/teachers/new',
     loadComponent: () => import('./features/admin/teachers/teacher-create.component')
       .then(m => m.TeacherCreateComponent)
