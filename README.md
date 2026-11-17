@@ -37,14 +37,6 @@ cd backend-springboot
 
 Le backend écoute sur `http://localhost:8081`. Flyway applique automatiquement les migrations du dossier `backend-springboot/src/main/resources/db/migration`.
 
-Avec le profil local (profil par défaut), trois comptes de démonstration sont créés au démarrage s'ils n'existent pas déjà :
-
-| Rôle | Adresse e-mail | Mot de passe |
-|---|---|---|
-| Administrateur | `admin@classflow.test` | `Admin123!` |
-| Étudiant | `student@classflow.test` | `Student123!` |
-| Enseignant | `teacher@classflow.test` | `Teacher123!` |
-
 Ces comptes sont réservés au développement local. Ils ne sont jamais créés hors du profil `local` et leurs mots de passe sont stockés sous forme hachée.
 
 ## Réinitialisation du mot de passe (US05)
