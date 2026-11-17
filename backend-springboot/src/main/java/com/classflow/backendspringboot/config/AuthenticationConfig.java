@@ -1,7 +1,7 @@
 package com.classflow.backendspringboot.config;
 
-import com.classflow.backendspringboot.user.auth.ClassFlowUserDetailsService;
 import com.classflow.backendspringboot.user.UserRepository;
+import com.classflow.backendspringboot.user.auth.ClassFlowUserDetailsService;
 import com.classflow.backendspringboot.user.auth.MustChangePasswordFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,7 +12,9 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -57,11 +59,23 @@ public class AuthenticationConfig {
     }
 
     @Bean
+    public LogoutSuccessHandler logoutSuccessHandler() {
+        return (request, response, authentication) -> {
+            SecurityContextHolder.clearContext();
+            if (request.getSession(false) != null) {
+                request.getSession(false).invalidate();
+            }
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        };
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             AuthenticationManager authenticationManager,
             SecurityContextRepository securityContextRepository,
-            UserRepository users) throws Exception {
+            UserRepository users,
+            LogoutSuccessHandler logoutSuccessHandler) throws Exception {
         http
                 .cors(cors -> {})
                 .authenticationManager(authenticationManager)
@@ -81,8 +95,10 @@ public class AuthenticationConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                response.setStatus(HttpServletResponse.SC_NO_CONTENT)));
+                        .clearAuthentication(true)
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler(logoutSuccessHandler));
 
         return http.build();
     }
