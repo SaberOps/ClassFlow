@@ -1,7 +1,10 @@
 <section class="page">
   <header class="page-header">
-    <h1>Accounts</h1>
-    <p class="subtitle">{{ totalElements() }} account(s)</p>
+    <div>
+      <h1>Accounts</h1>
+      <p class="subtitle">{{ totalElements() }} account(s)</p>
+    </div>
+    <a class="btn" routerLink="/admin/users/new">Create student or teacher</a>
   </header>
 
   @if (message(); as m) {
@@ -49,7 +52,13 @@
               </span>
             </td>
             <td class="col-actions">
+              <button type="button" class="btn" (click)="openProfile(u)">Profile</button>
               <button type="button" class="btn" (click)="openEdit(u)">Edit</button>
+              @if (u.role !== 'ADMIN') {
+                <button type="button" class="btn" (click)="requestTemporaryPassword(u)" [disabled]="busy()">
+                  Reset password
+                </button>
+              }
               <button type="button" class="btn" (click)="toggleStatus(u)">
                 {{ u.enabled ? 'Deactivate' : 'Reactivate' }}
               </button>
@@ -80,12 +89,31 @@
   <app-user-edit-dialog [user]="user" (saved)="onSaved($event)" (cancelled)="editing.set(null)" />
 }
 
+@if (profileUser(); as user) {
+  <app-user-profile-dialog [userId]="user.id" (closed)="profileUser.set(null)" />
+}
+
+@if (temporaryPassword(); as result) {
+  <div class="password-backdrop">
+    <section class="password-dialog" role="dialog" aria-modal="true" aria-labelledby="temporary-password-title">
+      <p class="password-eyebrow">ONE-TIME CREDENTIAL</p>
+      <h2 id="temporary-password-title">Temporary password generated</h2>
+      <p class="password-email">{{ result.email }}</p>
+      <code class="temporary-password" tabindex="0">{{ result.temporaryPassword }}</code>
+      <p class="password-warning">
+        Copy this password and give it to the user securely. It will not be available again, and the user must change it at next sign-in.
+      </p>
+      <button type="button" class="password-close" (click)="dismissTemporaryPassword()">I saved the password</button>
+    </section>
+  </div>
+}
+
 @if (pending()) {
   <app-confirm-dialog
     [title]="pendingTitle()"
     [message]="pendingMessage()"
     [confirmLabel]="pendingLabel()"
-    [danger]="true"
+    [danger]="pendingIsDangerous()"
     [busy]="busy()"
     (confirmed)="confirmPending()"
     (cancelled)="cancelPending()"

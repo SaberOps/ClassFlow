@@ -2,18 +2,20 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 import { AdminUserService, apiErrorMessage } from './admin-user.service';
 import { UserEditDialogComponent } from './user-edit-dialog.component';
-import { AdminUser, ROLE_LABELS, Role } from './user.model';
+import { UserProfileDialogComponent } from './user-profile-dialog.component';
+import { AdminUser, ROLE_LABELS, Role, TemporaryPasswordResponse } from './user.model';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
-type PendingAction = { kind: 'deactivate' | 'delete'; user: AdminUser };
+type PendingAction = { kind: 'deactivate' | 'delete' | 'temporary-password'; user: AdminUser };
 
 @Component({
   selector: 'app-user-list',
-  imports: [ReactiveFormsModule, ConfirmDialogComponent, UserEditDialogComponent],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmDialogComponent, UserEditDialogComponent, UserProfileDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss',
@@ -33,6 +35,8 @@ export class UserListComponent implements OnInit {
   protected readonly message = signal<{ type: 'success' | 'error'; text: string } | null>(null);
 
   protected readonly editing = signal<AdminUser | null>(null);
+  protected readonly profileUser = signal<AdminUser | null>(null);
+  protected readonly temporaryPassword = signal<TemporaryPasswordResponse | null>(null);
   protected readonly pending = signal<PendingAction | null>(null);
   protected readonly busy = signal(false);
 
@@ -88,6 +92,18 @@ export class UserListComponent implements OnInit {
     this.editing.set(user);
   }
 
+  protected openProfile(user: AdminUser): void {
+    this.profileUser.set(user);
+  }
+
+  protected requestTemporaryPassword(user: AdminUser): void {
+    if (user.role !== 'ADMIN') this.pending.set({ kind: 'temporary-password', user });
+  }
+
+  protected dismissTemporaryPassword(): void {
+    this.temporaryPassword.set(null);
+  }
+
   protected onSaved(updated: AdminUser): void {
     this.editing.set(null);
     this.users.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
@@ -133,6 +149,23 @@ export class UserListComponent implements OnInit {
       this.changeStatus(action.user, false);
       return;
     }
+    if (action.kind === 'temporary-password') {
+      this.busy.set(true);
+      this.api.resetTemporaryPassword(action.user.id).subscribe({
+        next: (result) => {
+          this.busy.set(false);
+          this.pending.set(null);
+          this.temporaryPassword.set(result);
+          this.showSuccess('Temporary password generated. Copy it now; it will not be shown again.');
+        },
+        error: (err) => {
+          this.busy.set(false);
+          this.pending.set(null);
+          this.showError(err);
+        },
+      });
+      return;
+    }
     this.busy.set(true);
     this.api.delete(action.user.id).subscribe({
       next: () => {
@@ -157,20 +190,32 @@ export class UserListComponent implements OnInit {
 
   protected pendingTitle(): string {
     const a = this.pending();
-    return a?.kind === 'delete' ? 'Delete this account?' : 'Deactivate this account?';
+    if (a?.kind === 'delete') return 'Delete this account?';
+    if (a?.kind === 'temporary-password') return 'Reset this user password?';
+    return 'Deactivate this account?';
   }
 
   protected pendingMessage(): string {
     const a = this.pending();
     if (!a) return '';
     const name = `${a.user.firstName} ${a.user.lastName}`;
+    if (a.kind === 'temporary-password') {
+      return `${name} will receive a new temporary password. Their current password will stop working, and they must choose a new password at their next sign-in. The generated password will be shown once.`;
+    }
     return a.kind === 'delete'
       ? `${name} will no longer be able to sign in and will disappear from all lists. Their history (courses, attendance, grades) is kept.`
       : `${name} will no longer be able to sign in. Their history is kept, and you can reactivate the account at any time.`;
   }
 
   protected pendingLabel(): string {
-    return this.pending()?.kind === 'delete' ? 'Delete account' : 'Deactivate';
+    const kind = this.pending()?.kind;
+    if (kind === 'delete') return 'Delete account';
+    if (kind === 'temporary-password') return 'Generate temporary password';
+    return 'Deactivate';
+  }
+
+  protected pendingIsDangerous(): boolean {
+    return this.pending()?.kind !== 'temporary-password';
   }
 
   // ---- Feedback ---------------------------------------------------------
