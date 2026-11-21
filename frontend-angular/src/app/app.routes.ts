@@ -1,111 +1,142 @@
-import { Routes } from '@angular/router';
-import { studentGuard } from './student.guard';
-import { teacherGuard } from './core/guards/teacher.guard';
-import { StudentLayoutComponent } from './layouts/student-layout/student-layout.component';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./login/login').then(m => m.Login) },
-  {
-    path: 'forgot-password',
-    loadComponent: () => import('./features/auth/password-reset/forgot-password.component')
-      .then(m => m.ForgotPasswordComponent)
-  },
-  {
-    path: 'reset-password',
-    loadComponent: () => import('./features/auth/password-reset/reset-password.component')
-      .then(m => m.ResetPasswordComponent)
-  },
-  { path: 'home', loadComponent: () => import('./role-home/role-home').then(m => m.RoleHome) },
-  {
-    path: 'admin/home',
-    loadComponent: () => import('./role-home/role-dashboard').then(m => m.RoleDashboard),
-    data: { role: 'ADMIN' }
-  },
-  {
-    path: 'teacher/home',
-    pathMatch: 'full',
-    redirectTo: 'teacher/dashboard'
-  },
-  {
-    path: 'student/home',
-    pathMatch: 'full',
-    redirectTo: 'student/dashboard'
-  },
-  {
-    path: 'admin/users/new',
-    loadComponent: () => import('./features/admin/teachers/teacher-create.component')
-      .then(m => m.TeacherCreateComponent)
-  },
-  {
-    path: 'admin/users',
-    loadChildren: () => import('./features/admin/users/admin-users.routes').then(m => m.ADMIN_USERS_ROUTES)
-  },
-  {
-    path: 'admin/filieres',
-    loadComponent: () =>
-      import('./features/admin/academic/filiere-management.component').then(
-        (m) => m.FiliereManagementComponent
-      ),
-  },
-  {
-    path: 'admin/timetable',
-    loadComponent: () =>
-      import('./features/admin/timetable/admin-timetable.component')
-        .then(m => m.AdminTimetableComponent)
-  },
-  {
-    path: 'admin/teachers/new',
-    pathMatch: 'full',
-    redirectTo: 'admin/users/new'
-  },
-  {
-    path: 'student/change-password',
-    canActivate: [studentGuard],
-    loadComponent: () =>
-      import('./features/student/profile/student-change-password.component')
-        .then(m => m.StudentChangePasswordComponent)
-  },
-  {
-    path: 'teacher',
-    canActivate: [teacherGuard],
-    canActivateChild: [teacherGuard],
-    loadComponent: () => import('./layouts/teacher-layout/teacher-layout.component')
-      .then(m => m.TeacherLayoutComponent),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', loadComponent: () => import('./features/teacher/dashboard/teacher-dashboard.component').then(m => m.TeacherDashboardComponent) },
-      { path: 'courses', loadComponent: () => import('./features/teacher/courses/teacher-courses.component').then(m => m.TeacherCoursesComponent) },
-      { path: 'assignments', loadComponent: () => import('./features/teacher/assignments/teacher-assignments.component').then(m => m.TeacherAssignmentsComponent) },
-      { path: 'timetable', loadComponent: () => import('./features/teacher/timetable/teacher-timetable.component').then(m => m.TeacherTimetableComponent) },
-      { path: 'attendance', loadComponent: () => import('./features/teacher/attendance/teacher-attendance.component').then(m => m.TeacherAttendanceComponent) },
-      { path: 'notifications', loadComponent: () => import('./features/teacher/notifications/teacher-notifications.component').then(m => m.TeacherNotificationsComponent) },
-      { path: 'profile', loadComponent: () => import('./features/teacher/profile/teacher-profile.component').then(m => m.TeacherProfileComponent) },
-      { path: 'change-password', loadComponent: () => import('./features/teacher/profile/teacher-change-password.component').then(m => m.TeacherChangePasswordComponent) }
-    ]
-  },
-  {
-    path: 'student',
-    canActivate: [studentGuard],
-    canActivateChild: [studentGuard],
-    component: StudentLayoutComponent,
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', loadComponent: () => import('./features/student/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'courses', loadComponent: () => import('./features/student/courses/courses.component').then(m => m.CoursesComponent) },
-      { path: 'courses/:id', loadComponent: () => import('./features/student/courses/course-detail.component').then(m => m.CourseDetailComponent) },
-      { path: 'assignments', loadComponent: () => import('./features/student/assignments/assignments.component').then(m => m.AssignmentsComponent) },
-      { path: 'assignments/:id', loadComponent: () => import('./features/student/assignments/assignment-detail.component').then(m => m.AssignmentDetailComponent) },
-      { path: 'grades', loadComponent: () => import('./features/student/assignments/grades.component').then(m => m.GradesComponent) },
-      { path: 'timetable', loadComponent: () => import('./features/student/timetable/timetable.component').then(m => m.TimetableComponent) },
-      { path: 'attendance', loadComponent: () => import('./features/student/attendance/attendance.component').then(m => m.AttendanceComponent) },
-      { path: 'request-documents', loadComponent: () => import('./features/student/resources/request-documents.component').then(m => m.RequestDocumentsComponent) },
-      { path: 'notifications', loadComponent: () => import('./features/student/notifications/notifications.component').then(m => m.NotificationsComponent) },
-      { path: 'teachers', loadComponent: () => import('./features/student/messaging/teachers.component').then(m => m.TeachersComponent) },
-      { path: 'messages', loadComponent: () => import('./features/student/messaging/messages.component').then(m => m.MessagesComponent) },
-      { path: 'feed', loadComponent: () => import('./features/student/feed/feed.component').then(m => m.FeedComponent) },
-      { path: 'profile', loadComponent: () => import('./features/student/profile/profile.component').then(m => m.ProfileComponent) }
-    ]
-  },
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: '**', redirectTo: 'login' }
-];
+interface AnnouncementSummary {
+  id: number;
+  title: string;
+  body: string;
+  targetType: 'ALL' | 'DEPARTMENT' | 'CLASS';
+  targetId: number | null;
+  authorName: string;
+  publishedAt: string;
+}
+
+@Component({
+  selector: 'app-admin-announcements',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
+    <section class="panel">
+      <h2>Publier une annonce</h2>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <label>
+          Titre
+          <input formControlName="title" />
+        </label>
+        <label>
+          Contenu
+          <textarea formControlName="body" rows="5"></textarea>
+        </label>
+        <label>
+          Cible
+          <select formControlName="targetType">
+            <option value="ALL">Tout le campus</option>
+            <option value="DEPARTMENT">Une filière</option>
+            <option value="CLASS">Une classe</option>
+          </select>
+        </label>
+        <label>
+          ID cible
+          <input formControlName="targetId" type="number" min="1" placeholder="Optionnel pour tout le campus" />
+        </label>
+        <button type="submit" [disabled]="saving()">{{ saving() ? 'Publication...' : 'Publier' }}</button>
+      </form>
+      @if (message()) {
+        <p class="message" [class.error]="error()">{{ message() }}</p>
+      }
+    </section>
+
+    <section class="panel">
+      <h2>Annonces récentes</h2>
+      @if (items().length === 0) {
+        <p>Aucune annonce publiée.</p>
+      } @else {
+        @for (item of items(); track item.id) {
+          <article class="item">
+            <small>{{ item.targetType }} · {{ item.authorName }}</small>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.body }}</p>
+            <time>{{ item.publishedAt | date: 'dd/MM/yyyy HH:mm' }}</time>
+          </article>
+        }
+      }
+    </section>
+  `,
+  styles: [
+    `:host { display:block; max-width:1000px; margin:0 auto; color:#1f2433; }
+     .panel { background:#fff; border:1px solid #eaeaf4; border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 8px 24px rgba(44,57,89,.04); }
+     form { display:grid; gap:16px; }
+     label { display:grid; gap:8px; font-weight:600; }
+     input, textarea, select { border:1px solid #dfe3f0; border-radius:10px; padding:10px 12px; font:inherit; }
+     button { border:0; border-radius:10px; background:#564bb6; color:#fff; padding:12px 18px; font-weight:700; cursor:pointer; }
+     .message { margin-top:16px; padding:10px 12px; border-radius:10px; background:#eefaf2; color:#1b5e36; }
+     .message.error { background:#fff1f1; color:#90252b; }
+     .item { padding:16px 0; border-top:1px solid #ececf5; }
+     .item:first-child { border-top:0; }
+     small { color:#6a7390; display:block; margin-bottom:6px; }
+     h3 { margin:0 0 8px; font-size:1.1rem; }
+     p { margin:0 0 8px; white-space:pre-wrap; }
+     time { font-size:.82rem; color:#69728e; }
+    `
+  ]
+})
+export class AdminAnnouncementsComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+  private readonly fb = inject(FormBuilder);
+
+  readonly items = signal<AnnouncementSummary[]>([]);
+  readonly saving = signal(false);
+  readonly message = signal<string>('');
+  readonly error = signal(false);
+
+  readonly form = this.fb.group({
+    title: ['', [Validators.required]],
+    body: ['', [Validators.required]],
+    targetType: ['ALL', [Validators.required]],
+    targetId: [null]
+  });
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.http.get<AnnouncementSummary[]>('/api/admin/announcements').subscribe({
+      next: (items) => this.items.set(items),
+      error: () => this.message.set('Impossible de charger les annonces.')
+    });
+  }
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const value = this.form.getRawValue();
+    const payload = {
+      title: value.title?.trim(),
+      body: value.body?.trim(),
+      targetType: value.targetType ?? 'ALL',
+      targetId: value.targetId ?? null
+    };
+
+    this.saving.set(true);
+    this.http.post<AnnouncementSummary>('/api/admin/announcements', payload).subscribe({
+      next: (item) => {
+        this.items.update((existing) => [item, ...existing]);
+        this.form.reset({ title: '', body: '', targetType: 'ALL', targetId: null });
+        this.message.set('Annonce publiée avec succès.');
+        this.error.set(false);
+        this.saving.set(false);
+      },
+      error: () => {
+        this.message.set('La publication a échoué. Vérifiez les champs et votre rôle.');
+        this.error.set(true);
+        this.saving.set(false);
+      }
+    });
+  }
+}

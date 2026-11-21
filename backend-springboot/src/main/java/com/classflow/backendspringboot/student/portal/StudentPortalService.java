@@ -1,138 +1,80 @@
 package com.classflow.backendspringboot.student.portal;
 
-import com.classflow.backendspringboot.common.exception.ConflictException;
-import com.classflow.backendspringboot.common.exception.NotFoundException;
-import com.classflow.backendspringboot.user.User;
-import com.classflow.backendspringboot.user.UserRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.classflow.backendspringboot.common.CurrentStudent;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
-@Service
-@Transactional(readOnly = true)
-public class StudentPortalService {
-    private final JdbcTemplate jdbc;
-    private final UserRepository users;
-    private final PasswordEncoder passwords;
+@RestController
+@RequestMapping("/api/student")
+@PreAuthorize("hasRole('STUDENT')")
+public class StudentPortalController {
+    private final StudentPortalService service;
+    private final CurrentStudent currentStudent;
 
-    public StudentPortalService(JdbcTemplate jdbc, UserRepository users, PasswordEncoder passwords) {
-        this.jdbc = jdbc;
-        this.users = users;
-        this.passwords = passwords;
+    public StudentPortalController(StudentPortalService service, CurrentStudent currentStudent) {
+        this.service = service;
+        this.currentStudent = currentStudent;
     }
 
-    public ProfileDto profile(User student) {
-        List<String> courses = jdbc.query(
-            "SELECT c.title FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE e.student_id=? AND c.active=TRUE ORDER BY c.title",
-            (rs, row) -> rs.getString(1), student.getId());
-        return jdbc.queryForObject("""
-            SELECT u.id,u.first_name,u.last_name,u.email,sp.student_number, d.name AS department_name,
-                   cg.name AS class_name,sp.phone,sp.photo_url
-            FROM users u LEFT JOIN student_profiles sp ON sp.user_id=u.id
-            LEFT JOIN departments d ON d.id=sp.department_id
-            LEFT JOIN class_groups cg ON cg.id=sp.class_group_id
-            WHERE u.id=? AND u.deleted_at IS NULL
-            """, (rs, row) -> new ProfileDto(rs.getLong("id"), rs.getString("first_name"),
-                rs.getString("last_name"), rs.getString("email"), rs.getString("student_number"),
-                rs.getString("department_name"), rs.getString("class_name"), rs.getString("phone"),
-                rs.getString("photo_url"), courses), student.getId());
+    @GetMapping("/profile")
+    public StudentPortalService.ProfileDto profile(Authentication auth) {
+        return service.profile(currentStudent.require(auth));
     }
 
-    @Transactional
-    public ProfileDto updateProfile(User student, ProfileUpdate request) {
-        jdbc.update("""
-            INSERT INTO student_profiles(user_id,phone,photo_url) VALUES (?,?,?)
-            ON DUPLICATE KEY UPDATE phone=VALUES(phone), photo_url=VALUES(photo_url)
-            """, student.getId(), request.phone(), request.photoUrl());
-        return profile(student);
+    @PutMapping("/profile")
+    public StudentPortalService.ProfileDto updateProfile(Authentication auth,
+            @Valid @RequestBody ProfileRequest request) {
+        return service.updateProfile(currentStudent.require(auth),
+            new StudentPortalService.ProfileUpdate(request.phone(), request.photoUrl()));
     }
 
-    @Transactional
-    public void changePassword(User student, PasswordUpdate request) {
-        User managed = users.findById(student.getId())
-            .orElseThrow(() -> new NotFoundException("Account not found"));
-        if (!passwords.matches(request.currentPassword(), managed.getPasswordHash())) {
-            throw new ConflictException("Current password is incorrect");
-        }
-        if (request.newPassword() == null || request.newPassword().length() < 10
-                || request.newPassword().length() > 72
-                || request.newPassword().chars().noneMatch(Character::isUpperCase)
-                || request.newPassword().chars().noneMatch(Character::isLowerCase)
-                || request.newPassword().chars().noneMatch(Character::isDigit)) {
-            throw new ConflictException("Password must be 10–72 characters and include upper, lower, and numeric characters");
-        }
-        managed.setPasswordHash(passwords.encode(request.newPassword()));
-        managed.setMustChangePassword(false);
-        users.save(managed);
+    @PostMapping("/profile/password")
+    public void changePassword(Authentication auth, @Valid @RequestBody PasswordRequest request) {
+        service.changePassword(currentStudent.require(auth),
+            new StudentPortalService.PasswordUpdate(request.currentPassword(), request.newPassword()));
     }
 
-    public List<NotificationDto> notifications(User student) {
-        return jdbc.query("""
-            SELECT id,type,title,body,link,read_flag,created_at
-            FROM notifications WHERE user_id=? ORDER BY created_at DESC,id DESC
-            """, (rs, row) -> new NotificationDto(rs.getLong("id"), rs.getString("type"),
-                rs.getString("title"), rs.getString("body"), rs.getString("link"),
-                rs.getBoolean("read_flag"), rs.getTimestamp("created_at").toInstant()), student.getId());
+    @GetMapping("/notifications")
+    public List<StudentPortalService.NotificationDto> notifications(Authentication auth) {
+        return service.notifications(currentStudent.require(auth));
     }
 
-    public UnreadCount unreadCount(User student) {
-        Integer count = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM notifications WHERE user_id=? AND read_flag=FALSE",
-            Integer.class, student.getId());
-        return new UnreadCount(count == null ? 0 : count);
+    @GetMapping("/notifications/unread-count")
+    public StudentPortalService.UnreadCount unreadCount(Authentication auth) {
+        return service.unreadCount(currentStudent.require(auth));
     }
 
-    @Transactional
-    public void markRead(User student, long id) {
-        int changed = jdbc.update("UPDATE notifications SET read_flag=TRUE WHERE id=? AND user_id=?", id, student.getId());
-        if (changed == 0) throw new NotFoundException("Notification not found");
+    @PostMapping("/notifications/{id}/read")
+    public void markRead(Authentication auth, @PathVariable long id) {
+        service.markRead(currentStudent.require(auth), id);
     }
 
-    @Transactional
-    public void markAllRead(User student) {
-        jdbc.update("UPDATE notifications SET read_flag=TRUE WHERE user_id=? AND read_flag=FALSE", student.getId());
+    @PostMapping("/notifications/read-all")
+    public void markAllRead(Authentication auth) {
+        service.markAllRead(currentStudent.require(auth));
     }
 
-    public List<RequestDocumentDto> requestDocuments() {
-        return jdbc.query("""
-            SELECT id,title,description,file_name,file_url,published_at
-            FROM request_documents ORDER BY published_at DESC,id DESC
-            """, (rs, row) -> new RequestDocumentDto(rs.getLong("id"), rs.getString("title"),
-                rs.getString("description"), rs.getString("file_name"), rs.getString("file_url"),
-                rs.getTimestamp("published_at").toInstant()));
+    @GetMapping("/feed")
+    public List<StudentPortalService.FeedItem> feed(Authentication auth) {
+        return service.feed(currentStudent.require(auth));
     }
 
-    public List<TeacherDto> teachers(User student) {
-        return jdbc.query("""
-            SELECT u.id,u.first_name,u.last_name,u.email,
-                   GROUP_CONCAT(DISTINCT c.title ORDER BY c.title SEPARATOR '||') AS course_titles
-            FROM enrollments e JOIN courses c ON c.id=e.course_id
-            JOIN users u ON u.id=c.teacher_id
-            WHERE e.student_id=? AND c.active=TRUE AND u.deleted_at IS NULL
-            GROUP BY u.id,u.first_name,u.last_name,u.email
-            ORDER BY u.last_name,u.first_name
-            """, (rs, row) -> new TeacherDto(rs.getLong("id"), rs.getString("first_name"),
-                rs.getString("last_name"), rs.getString("email"),
-                rs.getString("course_titles") == null || rs.getString("course_titles").isBlank()
-                    ? List.of() : Arrays.asList(rs.getString("course_titles").split("\\|\\|"))), student.getId());
+    @GetMapping("/request-documents")
+    public List<StudentPortalService.RequestDocumentDto> requestDocuments() {
+        return service.requestDocuments();
     }
 
-    public record ProfileDto(Long id, String firstName, String lastName, String email, String studentNumber,
-                             String departmentName, String className, String phone, String photoUrl,
-                             List<String> courseTitles) {}
-    public record ProfileUpdate(String phone, String photoUrl) {}
-    public record PasswordUpdate(String currentPassword, String newPassword) {}
-    public record NotificationDto(Long id, String type, String title, String body, String link,
-                                  boolean read, Instant createdAt) {}
-    public record UnreadCount(int unread) {}
-    public record RequestDocumentDto(Long id, String title, String description, String fileName,
-                                     String fileUrl, Instant publishedAt) {}
-    public record TeacherDto(Long id, String firstName, String lastName, String email, List<String> courses) {}
+    @GetMapping("/teachers")
+    public List<StudentPortalService.TeacherDto> teachers(Authentication auth) {
+        return service.teachers(currentStudent.require(auth));
+    }
+
+    public record ProfileRequest(@Size(max=30) String phone, @Size(max=500) String photoUrl) {}
+    public record PasswordRequest(@NotBlank String currentPassword, @NotBlank @Size(min=10,max=72) String newPassword) {}
 }
